@@ -1,13 +1,8 @@
 #pragma once
 #include <type_traits>
+#include <iterator>
 
 template <typename T>
-struct hasBeginEnd {
-    template <typename U>
-    static auto test(U* u) -> decltype(u->begin(), u->end(), std::true_type());
-
-    template <typename U>
-    static std::false_type test(...);
-
-    static constexpr bool value = decltype(test<T>(nullptr))::value;
+concept HasBeginEnd = requires(T t) {
+    { t.begin() } -> std::same_as<decltype(t.end())>;
 };

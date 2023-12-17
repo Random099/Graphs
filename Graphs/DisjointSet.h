@@ -10,7 +10,7 @@ template <typename T>
 class DisjointSet
 {
 public:
-    template <typename U, std::enable_if_t<hasBeginEnd<U>::value, int> = 0>
+    template <typename U> requires HasBeginEnd<U>
     void setMake(const U& arr);
     T setFind(T element);
     void setUnion(const T& element1, const T& element2);
@@ -21,7 +21,7 @@ private:
 
 //methods
 template <typename T>
-template <typename U, std::enable_if_t<hasBeginEnd<U>::value, int> >
+template <typename U> requires HasBeginEnd<U>
 void DisjointSet<T>::setMake(const U& arr)
 {
     for (auto& a : arr)
