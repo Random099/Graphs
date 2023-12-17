@@ -6,6 +6,8 @@
 #include <set>
 #include <memory>
 #include <numeric>
+#include <stack>
+#include <deque>
 
 std::vector< std::set<uint32_t> >::iterator setFind(std::vector< std::set<uint32_t> >&, uint32_t);
 

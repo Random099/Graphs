@@ -1,5 +1,6 @@
 #pragma once
 
+#include "extras.h"
 #include <set>
 #include <unordered_map>
 #include <algorithm>
@@ -9,7 +10,8 @@ template <typename T>
 class DisjointSet
 {
 public:
-    void setMake(const std::vector<T>& arr);
+    template <typename U, std::enable_if_t<hasBeginEnd<U>::value, int> = 0>
+    void setMake(const U& arr);
     T setFind(T element);
     void setUnion(const T& element1, const T& element2);
     const std::unordered_map<T, T>& dataGet();
@@ -19,7 +21,8 @@ private:
 
 //methods
 template <typename T>
-void DisjointSet<T>::setMake(const std::vector<T>& arr)
+template <typename U, std::enable_if_t<hasBeginEnd<U>::value, int> >
+void DisjointSet<T>::setMake(const U& arr)
 {
     for (auto& a : arr)
     {

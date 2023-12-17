@@ -137,12 +137,14 @@
   <ItemGroup>
     <ClCompile Include="DisjointSet.inl" />
     <ClCompile Include="Edge.cpp" />
+    <ClCompile Include="extras.cpp" />
     <ClCompile Include="Graph.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DisjointSet.h" />
     <ClInclude Include="Edge.h" />
+    <ClInclude Include="extras.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>
