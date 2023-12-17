@@ -3,7 +3,7 @@
 
 std::vector< std::set<uint32_t> >::iterator setFind(std::vector< std::set<uint32_t> >& dSet, uint32_t element)
 {
-    auto it = std::find_if(dSet.begin(), dSet.end(), [element](std::set<uint32_t>& set) mutable { return set.find(element) != set.end(); });
+    auto it = std::find_if(dSet.begin(), dSet.end(), [element](std::set<uint32_t>& set) { return set.find(element) != set.end(); });
     return it;
 }
 
@@ -11,51 +11,51 @@ Graph::Graph() : _vertexCount(0), _edgeCount(0) {}
 
 Graph::Graph(const size_t& vertexCount) : _vertexCount(vertexCount), _edgeCount(0)
 {
-    _vertices = std::vector< std::vector<Edge> >(_vertexCount);
+    _graph = std::vector< std::vector<Edge> >(_vertexCount);
 }
 
 Graph::Graph(const size_t&& vertexCount) : _vertexCount(vertexCount), _edgeCount(0)
 {
-    _vertices = std::vector< std::vector<Edge> >(_vertexCount);
+    _graph = std::vector< std::vector<Edge> >(_vertexCount);
 }
 
 Graph::Graph(const size_t& vertexCount, const std::vector<Edge>& edges) : _vertexCount(vertexCount), _edgeCount(edges.size())
 {
-    _vertices = std::vector< std::vector<Edge> >(_vertexCount);
+    _graph = std::vector< std::vector<Edge> >(_vertexCount);
     for (int i = 0; i < _edgeCount; ++i)
     {
-        _vertices[edges[i].getVertices().first].push_back(edges[i]);
+        _graph[edges[i].verticesGet().first].push_back(edges[i]);
     }
 }
 
 Graph::Graph(const size_t&& vertexCount, const std::vector<Edge>& edges) : _vertexCount(vertexCount), _edgeCount(edges.size())
 {
-    _vertices = std::vector< std::vector<Edge> >(_vertexCount);
+    _graph = std::vector< std::vector<Edge> >(_vertexCount);
     for (int i = 0; i < _edgeCount; ++i)
     {
-        _vertices[edges[i].getVertices().first].push_back(edges[i]);
+        _graph[edges[i].verticesGet().first].push_back(edges[i]);
     }
 }
 
-Graph::Graph(const std::vector< std::vector<Edge> >& vertices) : _vertices(vertices)
+Graph::Graph(const std::vector< std::vector<Edge> >& vertices) : _graph(vertices)
 {
-    _vertexCount = _vertices.size();
+    _vertexCount = _graph.size();
     _edgeCount = 0;
-    for (const auto& vertex : _vertices)
+    for (const auto& vertex : _graph)
     {
         _edgeCount += vertex.size();
     }
 }
 
-void Graph::addEdge(const Edge & edge)
+void Graph::edgeAdd(const Edge & edge)
 {
-    _vertices[edge.getVertices().first].push_back(edge);
+    _graph[edge.verticesGet().first].push_back(edge);
     ++_edgeCount;
 }
 
 void Graph::print() const
 {
-    for (const auto& vertex : _vertices)
+    for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
         {
@@ -67,7 +67,7 @@ void Graph::print() const
 std::unique_ptr< std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 {
     auto res = std::make_unique< std::multiset<Edge, edgeComp> >();
-    for (const auto& vertex : _vertices)
+    for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
         {
@@ -80,23 +80,16 @@ std::unique_ptr< std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 Graph Graph::kruskal() const
 {
     std::unique_ptr< std::multiset<Edge, edgeComp> > edges = this->edgeSetGet();
-    std::vector< std::set<uint32_t>> vertexList;
-    for (uint32_t i = 0; i < _vertexCount; ++i)
-    {
-        vertexList.push_back(std::set<uint32_t>{ i });
-    }
+    DisjointSet<uint32_t> vertexSet;
+    vertexSet.setMake(*this->verticesGet());
     Graph minSpanForest(_vertexCount);
 
     for (const Edge& edge : *edges)
     {
-        auto vertexFirstIt = setFind(vertexList, edge.getVertices().first);
-        auto vertexSecondIt = setFind(vertexList, edge.getVertices().second);
-
-        if (*vertexFirstIt->rbegin() != *vertexSecondIt->rbegin())
+        if (vertexSet.setFind(edge.verticesGet().first) != vertexSet.setFind(edge.verticesGet().second))
         {
-            minSpanForest.addEdge(edge);
-            vertexFirstIt->insert(vertexSecondIt->begin(), vertexSecondIt->end());
-            vertexList.erase(vertexSecondIt);
+            minSpanForest.edgeAdd(edge);
+            vertexSet.setUnion(edge.verticesGet().first, edge.verticesGet().second);
         }
     }
     return minSpanForest;
@@ -105,11 +98,11 @@ Graph Graph::kruskal() const
 int32_t Graph::costGet() const
 {
     int32_t res = 0;
-    for (const auto& vertex : _vertices)
+    for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
         {
-            res += edge.getWeight();
+            res += edge.weightGet();
         }
     }
     return res;
@@ -118,4 +111,12 @@ int32_t Graph::costGet() const
 size_t Graph::vertexCountGet() const
 {
     return _vertexCount;
+}
+
+std::unique_ptr< std::vector<uint32_t> > Graph::verticesGet() const
+{
+    auto res = std::make_unique< std::vector<uint32_t> >();
+    res->resize(_vertexCount);
+    std::iota(res->begin(), res->end(), 0);
+    return res;
 }
