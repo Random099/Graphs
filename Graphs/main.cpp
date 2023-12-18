@@ -2,6 +2,7 @@
 
 int main()
 {
+    Interface interface;
     Graph graphFirst(4);
     graphFirst.edgeAdd(Edge(0, 1, 1));
     graphFirst.edgeAdd(Edge(0, 2, 3));
@@ -38,6 +39,6 @@ int main()
     Graph graphSecondMinSpanForest = graphSecond.kruskal();
     graphSecondMinSpanForest.print();
     std::cout << "Cost: " << graphSecondMinSpanForest.costGet() << '\n';
-    
+    interface.run();
     return 0;
 }
