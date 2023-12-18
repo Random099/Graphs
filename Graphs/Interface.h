@@ -10,40 +10,29 @@
 #include <GLFW/glfw3.h>
 
 #include <utility>
+#include <string>
+#include <map>
+#include <vector>
+#include <tuple>
+#include <memory>
 
 class Interface
 {
 public:
-    Interface() : points(), currentPoint(0) {}
+    Interface() : activeWindow(0) {}
 	int run();
 private:
-    std::vector<ImVec2> points;
-    std::vector< std::pair<ImVec2, ImVec2> > edges;
-    int currentPoint;
+    static void mouseButtonCallback(GLFWwindow*, int, int, int);
+    static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);
+    void addPoint(const ImVec2&, const std::string&);
+    void drawGraphs();
 
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) 
-    {
-        Interface* interface = static_cast<Interface*>(glfwGetWindowUserPointer(window));
-        if (interface && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        {
-            double x, y;
-            glfwGetCursorPos(window, &x, &y);
-            interface->addPoint(ImVec2(static_cast<float>(x), static_cast<float>(y)));
-        }
-        else if (interface && button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && interface->points.size() > 0)
-        {
-            if (interface->edges.size() > 0)
-                interface->edges.pop_back();
-            interface->points.pop_back();
-            interface->currentPoint--;
-        }
-    }
-
-    void addPoint(const ImVec2& point) {
-        points.push_back(point);
-        currentPoint++;
-        if (currentPoint > 1)
-            edges.push_back(std::make_pair(points[currentPoint - 2], points[currentPoint - 1]));
-    }
+    //std::map<std::string, std::vector<ImVec2> > points;
+    std::map<std::string, std::vector<std::pair<ImVec2, ImVec2> > > edges;
+    std::map<std::string, std::vector<ImVec2> > points;
+    //std::vector<std::pair<ImVec2, ImVec2> >  edges;
+    std::vector<std::tuple<std::string, ImVec2, int> > windows;
+    int activeWindow;
+    //ImVec2 cursorPos;
 };
 
