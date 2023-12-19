@@ -68,21 +68,3 @@ void Interface::keyboardButtonCallback(GLFWwindow* window, int key, int scancode
 			interface->activeWindow = static_cast<int>(interface->graphWindows.size()) - 1;
 	}	
 }
-
-void Interface::handlePoints()
-{
-	ImGuiIO& io = ImGui::GetIO();
-	if (graphWindows.size() > 0)
-	{
-		if (io.MouseClicked[0])
-		{
-			ImVec2 mousePos = io.MousePos;
-			graphWindows[activeWindow].addPoint(ImVec2{ mousePos.x - graphWindows[activeWindow].mousePosGet().x, mousePos.y - graphWindows[activeWindow].mousePosGet().y });
-		}
-		else if (io.MouseClicked[1])
-		{
-			if (graphWindows[activeWindow].edgesGet()->size() > 0)
-				graphWindows[activeWindow].edgesGet()->pop_back();
-		}
-	}
-}

@@ -24,7 +24,6 @@ public:
 	int run();
 private:
     static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);
-    void handlePoints();
 
     std::vector<GraphWindow> graphWindows;
     int activeWindow;
