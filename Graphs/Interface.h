@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graph.h"
+#include "GraphWindow.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -22,17 +23,10 @@ public:
     Interface() : activeWindow(0) {}
 	int run();
 private:
-    static void mouseButtonCallback(GLFWwindow*, int, int, int);
     static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);
-    void addPoint(const ImVec2&, const std::string&);
-    void drawGraphs();
+    void handlePoints();
 
-    //std::map<std::string, std::vector<ImVec2> > points;
-    std::map<std::string, std::vector<std::pair<ImVec2, ImVec2> > > edges;
-    std::map<std::string, std::vector<ImVec2> > points;
-    //std::vector<std::pair<ImVec2, ImVec2> >  edges;
-    std::vector<std::tuple<std::string, ImVec2, int> > windows;
+    std::vector<GraphWindow> graphWindows;
     int activeWindow;
-    //ImVec2 cursorPos;
 };
 

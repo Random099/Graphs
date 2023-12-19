@@ -139,6 +139,7 @@
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="extras.cpp" />
     <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="GraphWindow.cpp" />
     <ClCompile Include="Interface.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -147,6 +148,7 @@
     <ClInclude Include="Edge.h" />
     <ClInclude Include="extras.h" />
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="GraphWindow.h" />
     <ClInclude Include="Interface.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>

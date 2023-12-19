@@ -49,6 +49,12 @@ Graph::Graph(const std::vector< std::vector<Edge> >& vertices) : _graph(vertices
 
 void Graph::edgeAdd(const Edge & edge)
 {
+    uint32_t maxVertex = std::max(edge.verticesGet().first, edge.verticesGet().second);
+    if (maxVertex > _graph.size())
+    {
+		_graph.resize(maxVertex + 1);
+		_vertexCount = _graph.size();
+	}
     _graph[edge.verticesGet().first].push_back(edge);
     ++_edgeCount;
 }
