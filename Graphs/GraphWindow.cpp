@@ -23,14 +23,14 @@ void GraphWindow::pointAdd(const ImVec2& point)
 	{
 		_edgeBuffer.second = std::make_shared<ImVec2>(point);
 		auto edgesPtr = _graph.edgeSetGet();
-		auto vertexConnectionExists = std::find_if(edgesPtr->begin(), edgesPtr->end(),
+		bool vertexConnectionExists = std::find_if(edgesPtr->begin(), edgesPtr->end(),
 			[&](const Edge& edge) -> bool
 			{
 				return (edge.verticesGet().first == _currentVertex && edge.verticesGet().second == _currentVertex + 1)
 					|| (edge.verticesGet().first == _currentVertex + 1 && edge.verticesGet().second == _currentVertex);
 			}
-		);
-		if (vertexConnectionExists == std::end(*edgesPtr))
+		) == std::end(*edgesPtr);
+		if (vertexConnectionExists)
 		{
 			int32_t weight = helper::Distance<int32_t>(*_edgeBuffer.first, *_edgeBuffer.second);
 			_graph.edgeAdd(Edge{ _currentVertex, _currentVertex + 1, weight });
@@ -123,7 +123,7 @@ bool GraphWindow::pointSelect(const ImVec2& mousePos)
 	return false;
 }
 
-bool GraphWindow::edgeSelect(const ImVec2& mousePos)
+bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 {
 	_selectedPoint = nullptr;
 	for (ImVec2& point : *_points)
