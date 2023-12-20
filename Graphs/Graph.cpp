@@ -1,46 +1,49 @@
 #include "Graph.h"
 
+Graph::Graph() : 
+    _vertexCount{ 0 },
+    _edgeCount{ 0 }
+{}
 
-std::vector< std::set<uint32_t> >::iterator setFind(std::vector< std::set<uint32_t> >& dSet, uint32_t element)
+Graph::Graph(const size_t& vertexCount) : 
+    _vertexCount{ vertexCount },
+    _edgeCount{ 0 },
+    _graph{ std::vector<std::vector<Edge> >(vertexCount) }
+{}
+
+Graph::Graph(const size_t&& vertexCount) :
+    _vertexCount{ vertexCount },
+    _edgeCount{ 0 },
+    _graph{ std::vector<std::vector<Edge> >(vertexCount) }
+{}
+
+Graph::Graph(const size_t& vertexCount, const std::vector<Edge>& edges) : 
+    _vertexCount{ vertexCount },
+    _edgeCount{ edges.size() },
+    _graph{ std::vector<std::vector<Edge> >(vertexCount) }
 {
-    auto it = std::find_if(dSet.begin(), dSet.end(), [element](std::set<uint32_t>& set) { return set.find(element) != set.end(); });
-    return it;
-}
-
-Graph::Graph() : _vertexCount(0), _edgeCount(0) {}
-
-Graph::Graph(const size_t& vertexCount) : _vertexCount(vertexCount), _edgeCount(0)
-{
-    _graph = std::vector< std::vector<Edge> >(_vertexCount);
-}
-
-Graph::Graph(const size_t&& vertexCount) : _vertexCount(vertexCount), _edgeCount(0)
-{
-    _graph = std::vector< std::vector<Edge> >(_vertexCount);
-}
-
-Graph::Graph(const size_t& vertexCount, const std::vector<Edge>& edges) : _vertexCount(vertexCount), _edgeCount(edges.size())
-{
-    _graph = std::vector< std::vector<Edge> >(_vertexCount);
     for (int i = 0; i < _edgeCount; ++i)
     {
         _graph[edges[i].verticesGet().first].push_back(edges[i]);
     }
 }
 
-Graph::Graph(const size_t&& vertexCount, const std::vector<Edge>& edges) : _vertexCount(vertexCount), _edgeCount(edges.size())
+Graph::Graph(const size_t&& vertexCount, const std::vector<Edge>& edges) : 
+    _vertexCount{ vertexCount },
+    _edgeCount{ edges.size() },
+    _graph{ std::vector<std::vector<Edge> >(vertexCount) }
 {
-    _graph = std::vector< std::vector<Edge> >(_vertexCount);
     for (int i = 0; i < _edgeCount; ++i)
     {
         _graph[edges[i].verticesGet().first].push_back(edges[i]);
     }
 }
 
-Graph::Graph(const std::vector< std::vector<Edge> >& vertices) : _graph(vertices)
+Graph::Graph(const std::vector<std::vector<Edge> >& vertices) :
+    _graph{ vertices },
+    _vertexCount { vertices.size() },
+    _edgeCount{ 0 }
 {
-    _vertexCount = _graph.size();
-    _edgeCount = 0;
     for (const auto& vertex : _graph)
     {
         _edgeCount += vertex.size();
@@ -70,9 +73,9 @@ void Graph::print() const
     }
 }
 
-std::unique_ptr< std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
+std::unique_ptr<std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 {
-    auto res = std::make_unique< std::multiset<Edge, edgeComp> >();
+    auto res = std::make_unique<std::multiset<Edge, edgeComp> >();
     for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
@@ -85,7 +88,7 @@ std::unique_ptr< std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 
 Graph Graph::kruskal() const
 {
-    std::unique_ptr< std::multiset<Edge, edgeComp> > edges = this->edgeSetGet();
+    std::unique_ptr<std::multiset<Edge, edgeComp> > edges = this->edgeSetGet();
     DisjointSet<uint32_t> vertexSet;
     vertexSet.setMake(*this->verticesGet());
     Graph minSpanForest(_vertexCount);
@@ -119,9 +122,9 @@ size_t Graph::vertexCountGet() const
     return _vertexCount;
 }
 
-std::unique_ptr< std::vector<uint32_t> > Graph::verticesGet() const
+std::unique_ptr<std::vector<uint32_t> > Graph::verticesGet() const
 {
-    auto res = std::make_unique< std::vector<uint32_t> >();
+    auto res = std::make_unique<std::vector<uint32_t> >();
     res->resize(_vertexCount);
     std::iota(res->begin(), res->end(), 0);
     return res;

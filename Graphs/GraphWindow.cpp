@@ -54,8 +54,8 @@ void GraphWindow::draw()
 
 	for (std::pair<ImVec2, ImVec2>& edge : *_edges)
 	{
-		ImVec2 vertex1 = ImVec2(edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y);
-		ImVec2 vertex2 = ImVec2(edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y);
+		ImVec2 vertex1 = ImVec2{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
+		ImVec2 vertex2 = ImVec2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
 		ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::WHITE, thickness);
 
 		int32_t weight = static_cast<int32_t>(std::sqrt(std::pow(vertex2.x - vertex1.x, 2.0f) + std::pow(vertex2.y - vertex1.y, 2.0f)));
@@ -113,7 +113,7 @@ bool GraphWindow::pointSelect(const ImVec2& mousePos)
 	_selectedPoint = nullptr;
 	for (ImVec2& point : *_points)
 	{
-		uint32_t distance = helper::Distance<uint32_t>(ImVec2(_windowOffset.x + point.x, _windowOffset.y + point.y), mousePos);
+		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.y + point.y }, mousePos);
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
 			_selectedPoint = std::make_shared<ImVec2>(point);
@@ -128,7 +128,7 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos)
 	_selectedPoint = nullptr;
 	for (ImVec2& point : *_points)
 	{
-		uint32_t distance = helper::Distance<uint32_t>(ImVec2(_windowOffset.x + point.x, _windowOffset.x + point.x), mousePos);
+		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.x + point.x }, mousePos);
 		//uint32_t distance = static_cast<uint32_t>(std::sqrt(std::pow(mousePos.x - (_windowOffset.x + point.x), 2.0f) + std::pow(mousePos.y - (_windowOffset.y + point.y), 2.0f)));
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
