@@ -8,7 +8,7 @@ int Interface::run()
 	GLFWwindow* window = glfwCreateWindow(1920, 1080, "GraphDraw", nullptr, nullptr);
 	glfwSetWindowUserPointer(window, this);
 	glfwSetKeyCallback(window, Interface::keyboardButtonCallback);
-	glfwSetWindowCloseCallback(window, [](GLFWwindow* window) { glfwSetWindowShouldClose(window, GLFW_TRUE); });
+	glfwSetWindowCloseCallback(window, [](GLFWwindow* window) { glfwSetWindowShouldClose(window, GLFW_FALSE); });
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 	gl3wInit();
@@ -36,11 +36,15 @@ int Interface::run()
 		ImGui::End();
 
 		if (graphWindows.size() > 0)
+		{
 			graphWindows[activeWindow].handlePoints();
+		}
 
 		for (auto& graphWindow : graphWindows)
 		{
+			ImGui::Begin(graphWindow.nameGet().c_str());
 			graphWindow.draw();
+			ImGui::End();
 		}
 
 		ImGui::Render();

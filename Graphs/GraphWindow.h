@@ -15,9 +15,6 @@ class GraphWindow
 {
 public:
 	GraphWindow(const std::string&);
-	void pointAdd(const ImVec2&);
-	bool pointSelect(const ImVec2&);
-	bool edgeSelect(const ImVec2&);
 	void draw();
 	void handlePoints();
 	const std::string& nameGet() const;
@@ -25,6 +22,10 @@ public:
 	const std::unique_ptr<std::vector<std::pair<ImVec2, ImVec2> > >& edgesGet() const;
 	const std::unique_ptr<std::vector<ImVec2> >& pointsGet() const;
 private:
+	void pointAdd(const ImVec2&);
+	bool pointSelect(const ImVec2&);
+	bool edgeSelect(const ImVec2&);
+
 	std::string _name;
 	Graph _graph;
 	std::unique_ptr<std::vector<std::pair<ImVec2, ImVec2> > > _edges;
@@ -32,6 +33,7 @@ private:
 	std::pair<std::shared_ptr<ImVec2>, std::shared_ptr<ImVec2> > _edgeBuffer;
 	uint32_t _currentVertex;
 	ImVec2 _windowOffset;
+	ImVec2 _mousePos;
 	std::shared_ptr<ImVec2> _selectedPoint;
 };
 

@@ -4,8 +4,9 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_name(name), 
 	_graph(Graph()), 
 	_edgeBuffer(std::make_pair(nullptr, nullptr)),
-	_currentVertex(0), 
-	_windowOffset(ImVec2(0, 0)), 
+	_currentVertex{ 0 },
+	_windowOffset(ImVec2{ 0, 0 }),
+	_mousePos(ImVec2{ 0, 0 }),
 	_edges(std::make_unique<std::vector<std::pair<ImVec2, ImVec2> > >()),
 	_points(std::make_unique<std::vector<ImVec2> >()),
 	_selectedPoint(nullptr)
@@ -47,11 +48,11 @@ void GraphWindow::pointAdd(const ImVec2& point)
 
 void GraphWindow::draw()
 {
-	ImGui::Begin(_name.c_str());
+	//ImGui::Begin(_name.c_str());
 
 	float thickness = 2.0f;
 	_windowOffset = ImGui::GetCursorScreenPos();
-
+	
 	for (std::pair<ImVec2, ImVec2>& edge : *_edges)
 	{
 		ImVec2 vertex1 = ImVec2{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
@@ -61,28 +62,33 @@ void GraphWindow::draw()
 		int32_t weight = static_cast<int32_t>(std::sqrt(std::pow(vertex2.x - vertex1.x, 2.0f) + std::pow(vertex2.y - vertex1.y, 2.0f)));
 		ImGui::GetWindowDrawList()->AddText(helper::MiddlePoint(vertex1, vertex2), ImGuiColors::GREEN, std::to_string(weight).c_str());
 	}
+	
 	for (uint32_t i = 0; i < _points->size(); ++i)
 	{
 		ImVec2 vertex = ImVec2((*_points)[i].x + _windowOffset.x, (*_points)[i].y + _windowOffset.y);
 		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, 5.0f, ImGuiColors::WHITE);
 		ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(i).c_str());
 	}
+
 	if (_selectedPoint != nullptr)
+	{
+		ImGui::GetWindowDrawList()->AddLine(ImVec2{ _selectedPoint->x + _windowOffset.x, _selectedPoint->y + _windowOffset.y }, _mousePos, ImGuiColors::WHITE_TRANSPARENT, 2.0f);
 		ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2{ _selectedPoint->x + _windowOffset.x, _selectedPoint->y + _windowOffset.y }, 5.0f, ImGuiColors::RED);
-	ImGui::End();
+	}
+	//ImGui::End();
 }
 
 void GraphWindow::handlePoints()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	ImVec2 mousePos = io.MousePos;
+	_mousePos = io.MousePos;
 	if (io.MouseClicked[0] && _points->size() == 0)
 	{
-		this->pointAdd(ImVec2{ mousePos.x - _windowOffset.x, mousePos.y - _windowOffset.y });
+		this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
 	}
 	else if (io.MouseClicked[0] && _points->size() > 0 && _selectedPoint == nullptr)
 	{
-		this->pointSelect(mousePos);
+		this->pointSelect(_mousePos);
 		if (_selectedPoint != nullptr)
 		{
 			_edgeBuffer.first = _selectedPoint;
@@ -90,10 +96,10 @@ void GraphWindow::handlePoints()
 	}
 	else if (io.MouseClicked[0] && _points->size() > 0 && _selectedPoint != nullptr)
 	{
-		if (this->pointSelect(mousePos))
+		if (this->pointSelect(_mousePos))
 			this->pointAdd(ImVec2{ *_selectedPoint });
 		else
-			this->pointAdd(ImVec2{ mousePos.x - _windowOffset.x, mousePos.y - _windowOffset.y });
+			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
 		_selectedPoint = nullptr;
 	}
 	else if (io.MouseClicked[1])
