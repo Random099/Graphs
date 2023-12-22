@@ -33,9 +33,9 @@ private:
 	std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > > _edges;
 	std::unique_ptr<std::map<uint32_t, ImVec2> > _points;
 	std::unique_ptr<std::map<uint32_t, Edge> > _edgeMap;
-	std::pair<std::shared_ptr<ImVec2>, std::shared_ptr<uint32_t> > _edgeBufferFirst;
-	std::pair<std::shared_ptr<ImVec2>, std::shared_ptr<uint32_t> > _edgeBufferSecond;
-	std::pair<std::shared_ptr<ImVec2>, std::shared_ptr<uint32_t> > _selectedPoint;
+	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _edgeBufferFirst;
+	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _edgeBufferSecond;
+	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _selectedPoint;
 	ImVec2 _windowOffset;
 	ImVec2 _mousePos;
 };

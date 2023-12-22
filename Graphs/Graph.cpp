@@ -164,7 +164,6 @@ int Graph::removeVertex(const uint32_t& vertex)
     {
 		return -1;
 	}
-    std::cout << "VERTEX SIZE: " << _graph[vertex].size();
 	_edgeCount -= _graph[vertex].size();
 	_graph[vertex].clear();
 	return 0;
