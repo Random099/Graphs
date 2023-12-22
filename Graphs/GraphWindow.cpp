@@ -55,7 +55,7 @@ void GraphWindow::draw()
 	ImGui::Begin(_name.c_str());
 	_windowOffset = ImGui::GetCursorScreenPos();
 	
-	for (auto& [n, edge] : *_edges)
+	for (const auto& [n, edge] : *_edges)
 	{
 		ImVec2 vertex1 = ImVec2{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
 		ImVec2 vertex2 = ImVec2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
@@ -65,7 +65,7 @@ void GraphWindow::draw()
 		ImGui::GetWindowDrawList()->AddText(helper::MiddlePoint(vertex1, vertex2), ImGuiColors::GREEN, std::to_string(weight).c_str());
 	}
 	
-	for (auto& [n, point] : *_points)
+	for (const auto& [n, point] : *_points)
 	{
 		ImVec2 vertex = ImVec2(point.x + _windowOffset.x, point.y + _windowOffset.y);
 		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
