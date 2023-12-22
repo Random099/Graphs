@@ -122,6 +122,11 @@ size_t Graph::vertexCountGet() const
     return _vertexCount;
 }
 
+size_t Graph::edgeCountGet() const
+{
+	return _edgeCount;
+}
+
 std::unique_ptr<std::vector<uint32_t> > Graph::verticesGet() const
 {
     auto res = std::make_unique<std::vector<uint32_t> >();
@@ -151,4 +156,16 @@ int Graph::removeEdge(const Edge& edge)
 		return 0;
 	}
 	return -1;
+}
+
+int Graph::removeVertex(const uint32_t& vertex)
+{
+    if (vertex >= _graph.size())
+    {
+		return -1;
+	}
+    std::cout << "VERTEX SIZE: " << _graph[vertex].size();
+	_edgeCount -= _graph[vertex].size();
+	_graph[vertex].clear();
+	return 0;
 }

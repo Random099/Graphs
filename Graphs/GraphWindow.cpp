@@ -3,14 +3,14 @@
 GraphWindow::GraphWindow(const std::string& name) : 
 	_name{ name },
 	_graph{ Graph() },
-	_edgeBufferFirst{ std::make_pair(nullptr, nullptr) },
-	_edgeBufferSecond{ std::make_pair(nullptr, nullptr) },
+	_edgeBufferFirst{ std::make_pair(std::shared_ptr<ImVec2>{ nullptr }, std::shared_ptr<uint32_t>{ nullptr }) },
+	_edgeBufferSecond{ std::make_pair(std::shared_ptr<ImVec2>{ nullptr }, std::shared_ptr<uint32_t>{ nullptr }) },
+	_selectedPoint{ std::make_pair(std::shared_ptr<ImVec2>{ nullptr }, std::shared_ptr<uint32_t>{ nullptr }) },
 	_windowOffset{ ImVec2{ 0, 0 } },
 	_mousePos{ ImVec2{ 0, 0 } },
 	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
 	_points{ std::make_unique<std::map<uint32_t, ImVec2> >() },
-	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
-	_selectedPoint{ std::make_pair(nullptr, nullptr) }
+	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() }
 {}
 
 
@@ -23,6 +23,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 		{
 			_edgeBufferFirst.second = std::make_shared<uint32_t>(0);
 			(*_points)[*_edgeBufferFirst.second] = *_edgeBufferFirst.first;
+			this->_graph._data().push_back(std::vector<Edge>());
 		}
 	}
 	else if (_edgeBufferSecond.first == nullptr)
@@ -41,17 +42,11 @@ void GraphWindow::pointAdd(const ImVec2& point)
 		if (!vertexConnectionExists)
 		{
 			int32_t weight = helper::Distance<int32_t>(*_edgeBufferFirst.first, *_edgeBufferSecond.first);
-			std::cout << "DISTANCE: " << weight << '\n';
-			std::cout << "VERTICES: " << * _edgeBufferFirst.second << " " << *_edgeBufferSecond.second << '\n';
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.second, *_edgeBufferSecond.second, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.first, *_edgeBufferSecond.first);
-			(*_edgeMap)[static_cast<uint32_t>(_edges->size())] = Edge{*_edgeBufferFirst.second, *_edgeBufferSecond.second, weight};
+			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.second, *_edgeBufferSecond.second, weight};
 		}
-
-		_edgeBufferFirst.first = nullptr;
-		_edgeBufferSecond.first = nullptr;
-		_edgeBufferFirst.second = nullptr;
-		_edgeBufferSecond.second = nullptr;
+		this->buffersReset();
 	}
 }
 
@@ -89,7 +84,7 @@ void GraphWindow::handlePoints()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	_mousePos = io.MousePos;
-	if (io.MouseClicked[0] && _points->size() == 0)
+	if (io.MouseClicked[0] && _points->empty())
 	{
 		this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
 	}
@@ -114,34 +109,26 @@ void GraphWindow::handlePoints()
 			_edgeBufferSecond.second = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
 			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
 		}
-		_selectedPoint.first = nullptr;
-		_selectedPoint.second = nullptr;
 	}
 	else if (io.MouseClicked[1])
 	{
-		std::cout << _points->size() << '\n';
-		std::cout << _edges->size() << '\n';
-		std::cout << _graph.edgeSetGet()->size() << '\n';
-		std::cout << _edgeMap->size() << '\n';
-		std::cout << _selectedPoint.second << '\n';
-		std::cout << _edgeBufferFirst.second << '\n';
-		std::cout << _edgeBufferSecond.second << '\n';
-		_selectedPoint.first = nullptr;
-		_edgeBufferFirst.first = nullptr;
-		_edgeBufferSecond.first = nullptr;
-		_selectedPoint.second = nullptr;
-		_edgeBufferFirst.second = nullptr;
-		_edgeBufferSecond.second = nullptr;
-		uint32_t edgeToRemoveId = 0;
-		if (this->_edges->size() > 0)
+		this->buffersReset();
+		uint32_t edgeToRemoveId = (this->_edges->size() > 0) ? (--this->_edges->end())->first : 0;
+		bool removeVertex = (this->_points->size() - this->_edges->size()) == 1;
+
+		if (this->_points->size() > 0 && removeVertex)
 		{
-			edgeToRemoveId = (--this->_edges->end())->first;
-			this->_edges->erase(--this->_edges->end());
-		}
-		if (this->_points->size() > 0)
 			this->_points->erase(--this->_points->end());
-		if (this->_graph.edgeSetGet()->size() > 0)
+			this->_graph.removeVertex(static_cast<uint32_t>(this->_points->size()) - 1);
+			if (this->_edges->size() > 0)
+			{
+				this->_edges->erase(--this->_edges->end());
+				this->_edgeMap->erase(edgeToRemoveId);
+			}
+		}
+		else if (this->_edges->size() > 0)
 		{
+			this->_edges->erase(--this->_edges->end());
 			this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
 			this->_edgeMap->erase(edgeToRemoveId);
 		}
@@ -150,14 +137,11 @@ void GraphWindow::handlePoints()
 
 bool GraphWindow::pointSelect(const ImVec2& mousePos)
 {
-	//_selectedPoint.first = nullptr;
-	//_selectedPoint.second = nullptr;
 	for (auto& [n, point] : *_points) 
 	{
 		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.y + point.y }, mousePos);
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
-			std::cout << "TEST" << '\n';
 			_selectedPoint.first = std::make_shared<ImVec2>(point);
 			_selectedPoint.second = std::make_shared<uint32_t>(n);
 			return true;
@@ -168,7 +152,6 @@ bool GraphWindow::pointSelect(const ImVec2& mousePos)
 
 bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 {
-	_selectedPoint.first = nullptr;
 	for (uint32_t i = 0; i < _points->size(); ++i)
 	{
 		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + (*_points)[i].x, _windowOffset.y + (*_points)[i].y}, mousePos);
@@ -201,4 +184,14 @@ const std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >& GraphWin
 const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() const
 {
 	return _points;
+}
+
+inline void GraphWindow::buffersReset()
+{
+	_selectedPoint.first = nullptr;
+	_selectedPoint.second = nullptr;
+	_edgeBufferFirst.first = nullptr;
+	_edgeBufferSecond.first = nullptr;
+	_edgeBufferFirst.second = nullptr;
+	_edgeBufferSecond.second = nullptr;
 }

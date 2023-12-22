@@ -23,9 +23,11 @@ public:
     Graph kruskal() const;
     int32_t costGet() const;
     size_t vertexCountGet() const;
+    size_t edgeCountGet() const;
     std::unique_ptr<std::vector<uint32_t> > verticesGet() const;
     std::vector<std::vector<Edge > >& _data();
     int removeEdge(const Edge&);
+    int removeVertex(const uint32_t&);
 private:
     size_t _vertexCount;
     size_t _edgeCount;
