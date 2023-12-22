@@ -50,10 +50,10 @@ Graph::Graph(const std::vector<std::vector<Edge> >& vertices) :
     }
 }
 
-void Graph::edgeAdd(const Edge & edge)
+void Graph::edgeAdd(const Edge& edge)
 {
     uint32_t maxVertex = std::max(edge.verticesGet().first, edge.verticesGet().second);
-    if (maxVertex > _graph.size())
+    if (maxVertex >= _graph.size())
     {
 		_graph.resize(maxVertex + 1);
 		_vertexCount = _graph.size();
@@ -128,4 +128,27 @@ std::unique_ptr<std::vector<uint32_t> > Graph::verticesGet() const
     res->resize(_vertexCount);
     std::iota(res->begin(), res->end(), 0);
     return res;
+}
+
+std::vector<std::vector<Edge> >& Graph::_data()
+{
+	return _graph;
+}
+
+int Graph::removeEdge(const Edge& edge)
+{
+    auto& vertex = _graph[edge.verticesGet().first];
+	auto it = std::find_if(vertex.begin(), vertex.end(),
+        [&](const Edge& e) -> bool
+        {
+			return e.verticesGet().first == edge.verticesGet().first && e.verticesGet().second == edge.verticesGet().second;
+		}
+    	);
+    if (it != vertex.end())
+    {
+		vertex.erase(it);
+		--_edgeCount;
+		return 0;
+	}
+	return -1;
 }

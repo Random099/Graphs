@@ -42,9 +42,7 @@ int Interface::run()
 
 		for (auto& graphWindow : graphWindows)
 		{
-			ImGui::Begin(graphWindow.nameGet().c_str());
 			graphWindow.draw();
-			ImGui::End();
 		}
 
 		ImGui::Render();

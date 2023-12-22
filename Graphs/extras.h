@@ -31,6 +31,8 @@ namespace constant
     namespace
     {
         constexpr uint32_t POINT_SELECTOR_RADIUS = 15;
+        constexpr float POINT_RADIUS = 5.0f;
+        constexpr float LINE_THICKNESS = 2.0f;
     }
 }
 

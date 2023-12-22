@@ -24,6 +24,8 @@ public:
     int32_t costGet() const;
     size_t vertexCountGet() const;
     std::unique_ptr<std::vector<uint32_t> > verticesGet() const;
+    std::vector<std::vector<Edge > >& _data();
+    int removeEdge(const Edge&);
 private:
     size_t _vertexCount;
     size_t _edgeCount;
