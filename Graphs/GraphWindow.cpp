@@ -10,7 +10,8 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_mousePos{ ImVec2{ 0, 0 } },
 	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
 	_points{ std::make_unique<std::map<uint32_t, ImVec2> >() },
-	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() }
+	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
+	_displayingMST{ false }
 {}
 
 
@@ -23,7 +24,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 		{
 			_edgeBufferFirst.first = std::make_shared<uint32_t>(0);
 			(*_points)[*_edgeBufferFirst.first] = *_edgeBufferFirst.second;
-			this->_graph._data().push_back(std::vector<Edge>());
+			this->_graph.data().push_back(std::vector<Edge>());
 		}
 	}
 	else if (_edgeBufferSecond.second == nullptr)
@@ -53,6 +54,12 @@ void GraphWindow::pointAdd(const ImVec2& point)
 void GraphWindow::draw()
 {
 	ImGui::Begin(_name.c_str());
+	ImGui::SetWindowSize(ImVec2{ 500, 500 });
+	ImGui::Checkbox("Display MST", &_displayingMST);
+	if (_displayingMST)
+	{
+		this->displayMinSpanTree();
+	}
 	_windowOffset = ImGui::GetCursorScreenPos();
 	
 	for (const auto& [n, edge] : *_edges)
@@ -114,21 +121,21 @@ void GraphWindow::handlePoints()
 	{
 		this->buffersReset();
 		uint32_t edgeToRemoveId = (this->_edges->size() > 0) ? (--this->_edges->end())->first : 0;
-		bool removeVertex = (this->_points->size() - this->_edges->size()) == 1;
-
+		bool removeVertex = _points->empty() ? false : _graph.data()[std::distance(this->_points->begin(), --this->_points->end())].size() == 0;
 		if (this->_points->size() > 0 && removeVertex)
 		{
 			this->_points->erase(--this->_points->end());
-			this->_graph.removeVertex(static_cast<uint32_t>(this->_points->size()) - 1);
+			this->_graph.removeVertex(static_cast<uint32_t>(this->_points->size()));
 			if (this->_edges->size() > 0)
 			{
-				this->_edges->erase(--this->_edges->end());
+				this->_edges->erase(edgeToRemoveId);
+				this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
 				this->_edgeMap->erase(edgeToRemoveId);
 			}
 		}
 		else if (this->_edges->size() > 0)
 		{
-			this->_edges->erase(--this->_edges->end());
+			this->_edges->erase(edgeToRemoveId);
 			this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
 			this->_edgeMap->erase(edgeToRemoveId);
 		}
@@ -193,4 +200,38 @@ inline void GraphWindow::buffersReset()
 	_edgeBufferSecond.first = nullptr;
 	_edgeBufferFirst.second = nullptr;
 	_edgeBufferSecond.second = nullptr;
+}
+
+void GraphWindow::displayMinSpanTree()
+{
+	Graph minSpanTree = _graph.kruskal();
+	ImGui::Begin((_name + " MST").c_str());
+	ImGui::SetWindowSize(ImVec2{ 500, 500 });
+	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
+	for (const auto& [n, edge] : *_edges)
+	{
+		if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
+			[&](const std::vector<Edge>& vertex) -> bool
+			{
+				return std::find_if(vertex.begin(), vertex.end(),
+				[&](const Edge& e) -> bool
+					{
+						return e == (*_edgeMap)[n];
+					}
+				) != vertex.end();
+			}
+		) != minSpanTree.data().end())
+		{
+			ImVec2 vertex1 = ImVec2{ edge.first.x + windowOffsetMST.x, edge.first.y + windowOffsetMST.y };
+			ImVec2 vertex2 = ImVec2{ edge.second.x + windowOffsetMST.x, edge.second.y + windowOffsetMST.y };
+			ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::GREEN, constant::LINE_THICKNESS);
+		}	
+	}
+	for (const auto& [n, point] : *_points)
+	{
+		ImVec2 vertex = ImVec2(point.x + windowOffsetMST.x, point.y + windowOffsetMST.y);
+		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
+		ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+	}
+	ImGui::End();
 }

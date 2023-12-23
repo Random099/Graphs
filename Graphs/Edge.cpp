@@ -33,3 +33,8 @@ std::ostream& operator<<(std::ostream& os, const Edge& e)
     os << e.verticesGet().first << " <-(" << e.weightGet() << ")-> " << e.verticesGet().second << '\n';
     return os;
 }
+
+bool Edge::operator==(const Edge& edge) const
+{
+	return _vertex1 == edge.verticesGet().first && _vertex2 == edge.verticesGet().second && _weight == edge.weightGet();
+}

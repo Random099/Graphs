@@ -135,7 +135,7 @@ std::unique_ptr<std::vector<uint32_t> > Graph::verticesGet() const
     return res;
 }
 
-std::vector<std::vector<Edge> >& Graph::_data()
+std::vector<std::vector<Edge> >& Graph::data()
 {
 	return _graph;
 }
@@ -160,11 +160,14 @@ int Graph::removeEdge(const Edge& edge)
 
 int Graph::removeVertex(const uint32_t& vertex)
 {
+    std::cout << "VERTEX: " << vertex << "\n";
     if (vertex >= _graph.size())
     {
 		return -1;
 	}
 	_edgeCount -= _graph[vertex].size();
 	_graph[vertex].clear();
+    _graph.erase(_graph.begin() + vertex);
+    --_vertexCount;
 	return 0;
 }

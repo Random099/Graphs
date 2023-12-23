@@ -1,5 +1,8 @@
 #include "Interface.h"
 
+Interface::Interface() :
+	_activeWindow{ 0 }
+{}
 
 int Interface::run()
 {
@@ -31,16 +34,16 @@ int Interface::run()
 		ImGui::Begin("Menu");
 		if (ImGui::Button("Add Graph"))
 		{
-			graphWindows.push_back(GraphWindow("Graph" + std::to_string(graphWindows.size() + 1)));
+			_graphWindows.push_back(GraphWindow("Graph" + std::to_string(_graphWindows.size() + 1)));
 		}
 		ImGui::End();
 
-		if (graphWindows.size() > 0)
+		if (_graphWindows.size() > 0)
 		{
-			graphWindows[activeWindow].handlePoints();
+			_graphWindows[_activeWindow].handlePoints();
 		}
 
-		for (auto& graphWindow : graphWindows)
+		for (auto& graphWindow : _graphWindows)
 		{
 			graphWindow.draw();
 		}
@@ -57,16 +60,16 @@ void Interface::keyboardButtonCallback(GLFWwindow* window, int key, int scancode
 	Interface* interface = static_cast<Interface*>(glfwGetWindowUserPointer(window));
 	if (key == GLFW_KEY_D && action == GLFW_PRESS)
 	{
-		if (interface->activeWindow < interface->graphWindows.size() - 1)
-			interface->activeWindow++;
+		if (interface->_activeWindow < interface->_graphWindows.size() - 1)
+			interface->_activeWindow++;
 		else
-			interface->activeWindow = 0;
+			interface->_activeWindow = 0;
 	}
 	else if (key == GLFW_KEY_A && action == GLFW_PRESS)
 	{
-		if (interface->activeWindow > 0)
-			interface->activeWindow--;
+		if (interface->_activeWindow > 0)
+			interface->_activeWindow--;
 		else
-			interface->activeWindow = static_cast<int>(interface->graphWindows.size()) - 1;
+			interface->_activeWindow = static_cast<int>(interface->_graphWindows.size()) - 1;
 	}	
 }

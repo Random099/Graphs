@@ -20,12 +20,12 @@
 class Interface
 {
 public:
-    Interface() : activeWindow(0) {}
+    Interface();
 	int run();
 private:
     static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);
 
-    std::vector<GraphWindow> graphWindows;
-    int activeWindow;
+    std::vector<GraphWindow> _graphWindows;
+    int _activeWindow;
 };
 

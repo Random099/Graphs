@@ -27,6 +27,7 @@ private:
 	bool pointSelect(const ImVec2&);
 	bool edgeSelect(const ImVec2&);
 	inline void buffersReset();
+	void displayMinSpanTree();
 
 	std::string _name;
 	Graph _graph;
@@ -38,5 +39,6 @@ private:
 	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _selectedPoint;
 	ImVec2 _windowOffset;
 	ImVec2 _mousePos;
+	bool _displayingMST;
 };
 

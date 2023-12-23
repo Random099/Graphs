@@ -11,6 +11,7 @@ public:
     std::pair<uint32_t, uint32_t> verticesGet() const;
     const int& weightGet() const;
     friend std::ostream& operator<<(std::ostream& os, const Edge& e);
+    bool operator==(const Edge& edge) const;
 private:
     uint32_t _vertex1;
     uint32_t _vertex2;
