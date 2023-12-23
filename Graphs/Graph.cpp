@@ -160,7 +160,6 @@ int Graph::removeEdge(const Edge& edge)
 
 int Graph::removeVertex(const uint32_t& vertex)
 {
-    std::cout << "VERTEX: " << vertex << "\n";
     if (vertex >= _graph.size())
     {
 		return -1;

@@ -27,11 +27,13 @@ private:
 	bool pointSelect(const ImVec2&);
 	bool edgeSelect(const ImVec2&);
 	inline void buffersReset();
-	void displayMinSpanTree();
+	void minSpanTreeDisplay();
+	void minSpanTreeUpdate();
 
 	std::string _name;
 	Graph _graph;
 	std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > > _edges;
+	std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > > _edgesMST;
 	std::unique_ptr<std::map<uint32_t, ImVec2> > _points;
 	std::unique_ptr<std::map<uint32_t, Edge> > _edgeMap;
 	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _edgeBufferFirst;

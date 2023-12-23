@@ -46,6 +46,8 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.first, *_edgeBufferSecond.first, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.second, *_edgeBufferSecond.second);
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
+			if (_displayingMST)
+				this->minSpanTreeUpdate();
 		}
 		this->buffersReset();
 	}
@@ -58,7 +60,7 @@ void GraphWindow::draw()
 	ImGui::Checkbox("Display MST", &_displayingMST);
 	if (_displayingMST)
 	{
-		this->displayMinSpanTree();
+		this->minSpanTreeDisplay();
 	}
 	_windowOffset = ImGui::GetCursorScreenPos();
 	
@@ -139,6 +141,8 @@ void GraphWindow::handlePoints()
 			this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
 			this->_edgeMap->erase(edgeToRemoveId);
 		}
+		if (_displayingMST)
+			this->minSpanTreeUpdate();
 	}
 }
 
@@ -202,36 +206,51 @@ inline void GraphWindow::buffersReset()
 	_edgeBufferSecond.second = nullptr;
 }
 
-void GraphWindow::displayMinSpanTree()
+void GraphWindow::minSpanTreeDisplay()
 {
-	Graph minSpanTree = _graph.kruskal();
 	ImGui::Begin((_name + " MST").c_str());
 	ImGui::SetWindowSize(ImVec2{ 500, 500 });
 	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
-	for (const auto& [n, edge] : *_edges)
+	if (_graph.data().size() > 1)
 	{
-		if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
-			[&](const std::vector<Edge>& vertex) -> bool
-			{
-				return std::find_if(vertex.begin(), vertex.end(),
-				[&](const Edge& e) -> bool
-					{
-						return e == (*_edgeMap)[n];
-					}
-				) != vertex.end();
-			}
-		) != minSpanTree.data().end())
+		for (std::shared_ptr<std::pair<ImVec2, ImVec2> > edge : *_edgesMST)
 		{
-			ImVec2 vertex1 = ImVec2{ edge.first.x + windowOffsetMST.x, edge.first.y + windowOffsetMST.y };
-			ImVec2 vertex2 = ImVec2{ edge.second.x + windowOffsetMST.x, edge.second.y + windowOffsetMST.y };
+			ImVec2 vertex1 = ImVec2{ edge->first.x + windowOffsetMST.x, edge->first.y + windowOffsetMST.y };
+			ImVec2 vertex2 = ImVec2{ edge->second.x + windowOffsetMST.x, edge->second.y + windowOffsetMST.y };
 			ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::GREEN, constant::LINE_THICKNESS);
-		}	
-	}
-	for (const auto& [n, point] : *_points)
-	{
-		ImVec2 vertex = ImVec2(point.x + windowOffsetMST.x, point.y + windowOffsetMST.y);
-		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
-		ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+		}
+		for (const auto& [n, point] : *_points)
+		{
+			ImVec2 vertex = ImVec2(point.x + windowOffsetMST.x, point.y + windowOffsetMST.y);
+			ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
+			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+		}
 	}
 	ImGui::End();
+}
+
+void GraphWindow::minSpanTreeUpdate()
+{
+	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
+	if (_graph.data().size() > 1)
+	{
+		Graph minSpanTree = _graph.kruskal();
+		for (auto& [n, edge] : *_edges)
+		{
+			if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
+				[&](const std::vector<Edge>& vertex) -> bool
+				{
+					return std::find_if(vertex.begin(), vertex.end(),
+					[&](const Edge& e) -> bool
+						{
+							return e == (*_edgeMap)[n];
+						}
+			) != vertex.end();
+				}
+			) != minSpanTree.data().end())
+			{
+				_edgesMST->push_back(std::make_shared<std::pair<ImVec2, ImVec2> >(edge));
+			}
+		}
+	}
 }
