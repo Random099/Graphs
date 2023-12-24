@@ -52,7 +52,7 @@ Graph::Graph(const std::vector<std::vector<Edge> >& vertices) :
 
 void Graph::edgeAdd(const Edge& edge)
 {
-    uint32_t maxVertex = std::max(edge.verticesGet().first, edge.verticesGet().second);
+    uint32_t maxVertex{ std::max(edge.verticesGet().first, edge.verticesGet().second) };
     if (maxVertex >= _graph.size())
     {
 		_graph.resize(maxVertex + 1);
@@ -87,7 +87,7 @@ void Graph::print() const
 
 std::unique_ptr<std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 {
-    auto res = std::make_unique<std::multiset<Edge, edgeComp> >();
+    auto res{ std::make_unique<std::multiset<Edge, edgeComp> >() };
     for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
@@ -100,7 +100,7 @@ std::unique_ptr<std::multiset<Edge, edgeComp> > Graph::edgeSetGet() const
 
 Graph Graph::kruskal() const
 {
-    std::unique_ptr<std::multiset<Edge, edgeComp> > edges = this->edgeSetGet();
+    std::unique_ptr<std::multiset<Edge, edgeComp> > edges{ this->edgeSetGet() };
     DisjointSet<uint32_t> vertexSet;
     vertexSet.setMake(*this->verticesGet());
     Graph minSpanForest(_vertexCount);
@@ -118,7 +118,7 @@ Graph Graph::kruskal() const
 
 int32_t Graph::costGet() const
 {
-    int32_t res = 0;
+    int32_t res{ 0 };
     for (const auto& vertex : _graph)
     {
         for (const auto& edge : vertex)
@@ -141,7 +141,7 @@ size_t Graph::edgeCountGet() const
 
 std::unique_ptr<std::vector<uint32_t> > Graph::verticesGet() const
 {
-    auto res = std::make_unique<std::vector<uint32_t> >();
+    auto res{ std::make_unique<std::vector<uint32_t> >() };
     res->resize(_vertexCount);
     std::iota(res->begin(), res->end(), 0);
     return res;
@@ -159,7 +159,7 @@ std::vector<std::vector<Edge> > Graph::dataCopy() const
 
 int Graph::edgeRemove(const Edge& edge)
 {
-    auto& vertex = _graph[edge.verticesGet().first];
+    auto& vertex{ _graph[edge.verticesGet().first] };
 	auto it = std::find_if(vertex.begin(), vertex.end(),
         [&](const Edge& e) -> bool
         {

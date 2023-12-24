@@ -65,7 +65,7 @@ int Interface::run()
 
 void Interface::keyboardButtonCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	Interface* interface = static_cast<Interface*>(glfwGetWindowUserPointer(window));
+	Interface* interface{ static_cast<Interface*>(glfwGetWindowUserPointer(window)) };
 	if (key == GLFW_KEY_D && action == GLFW_PRESS)
 	{
 		if (interface->_activeWindow < interface->_graphWindows.size() - 1)

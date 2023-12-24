@@ -167,7 +167,7 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 {
 	for (uint32_t i = 0; i < _points->size(); ++i)
 	{
-		uint32_t distance{ helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + (*_points)[i].x, _windowOffset.y + (*_points)[i].y}, mousePos };
+		uint32_t distance{ helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + (*_points)[i].x, _windowOffset.y + (*_points)[i].y}, mousePos) };
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
 			_selectedPoint.second = std::make_shared<ImVec2>((*_points)[i]);

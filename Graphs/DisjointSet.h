@@ -41,8 +41,8 @@ T DisjointSet<T>::setFind(T element)
 template <typename T>
 void DisjointSet<T>::setUnion(const T& element1, const T& element2)
 {
-    T a = setFind(element1);
-    T b = setFind(element2);
+    T a{ setFind(element1) };
+    T b{ setFind(element2) };
     _data[a] = b;
 }
 
