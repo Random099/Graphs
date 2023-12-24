@@ -11,6 +11,7 @@
 #include <string>
 #include <cmath>
 #include <map>
+#include <chrono>
 
 class GraphWindow
 {
@@ -29,18 +30,21 @@ private:
 	inline void buffersReset();
 	void minSpanTreeDisplay();
 	void minSpanTreeUpdate();
+	void minSpanTreeTime(const std::string&);
 
 	std::string _name;
 	Graph _graph;
-	std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > > _edges;
-	std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > > _edgesMST;
 	std::unique_ptr<std::map<uint32_t, ImVec2> > _points;
+	std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > > _edges;
 	std::unique_ptr<std::map<uint32_t, Edge> > _edgeMap;
+	std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > > _edgesMST;
+	std::shared_ptr<std::map<std::string, double> > _algorithmDurations;
 	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _edgeBufferFirst;
 	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _edgeBufferSecond;
 	std::pair<std::shared_ptr<uint32_t>, std::shared_ptr<ImVec2> > _selectedPoint;
 	ImVec2 _windowOffset;
 	ImVec2 _mousePos;
-	bool _displayingMST;
+	bool _displayingMinSpanTree;
+	bool _displayingMinSpanTreeTime;
 };
 

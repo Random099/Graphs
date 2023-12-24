@@ -140,6 +140,11 @@ std::vector<std::vector<Edge> >& Graph::data()
 	return _graph;
 }
 
+std::vector<std::vector<Edge> > Graph::dataCopy() const
+{
+    return _graph;
+}
+
 int Graph::removeEdge(const Edge& edge)
 {
     auto& vertex = _graph[edge.verticesGet().first];
@@ -169,4 +174,12 @@ int Graph::removeVertex(const uint32_t& vertex)
     _graph.erase(_graph.begin() + vertex);
     --_vertexCount;
 	return 0;
+}
+
+Graph Graph::operator=(const Graph& graph)
+{
+	_vertexCount = graph.vertexCountGet();
+	_edgeCount = graph.edgeCountGet();
+	_graph = graph.dataCopy();
+	return *this;
 }

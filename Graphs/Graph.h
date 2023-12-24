@@ -26,8 +26,10 @@ public:
     size_t edgeCountGet() const;
     std::unique_ptr<std::vector<uint32_t> > verticesGet() const;
     std::vector<std::vector<Edge > >& data();
+    std::vector<std::vector<Edge > > dataCopy() const;
     int removeEdge(const Edge&);
     int removeVertex(const uint32_t&);
+    Graph operator=(const Graph&);
 private:
     size_t _vertexCount;
     size_t _edgeCount;

@@ -3,17 +3,19 @@
 GraphWindow::GraphWindow(const std::string& name) : 
 	_name{ name },
 	_graph{ Graph() },
+	_points{ std::make_unique<std::map<uint32_t, ImVec2> >() },
+	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
+	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
+	_edgesMST{ std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >{ nullptr } },
+	_algorithmDurations{ std::shared_ptr<std::map<std::string, double> >{ nullptr } },
 	_edgeBufferFirst{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_edgeBufferSecond{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_selectedPoint{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_windowOffset{ ImVec2{ 0, 0 } },
 	_mousePos{ ImVec2{ 0, 0 } },
-	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
-	_points{ std::make_unique<std::map<uint32_t, ImVec2> >() },
-	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
-	_displayingMST{ false }
+	_displayingMinSpanTree{ false },
+	_displayingMinSpanTreeTime{ false }
 {}
-
 
 void GraphWindow::pointAdd(const ImVec2& point)
 {
@@ -46,7 +48,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.first, *_edgeBufferSecond.first, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.second, *_edgeBufferSecond.second);
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
-			if (_displayingMST)
+			if (_displayingMinSpanTree)
 				this->minSpanTreeUpdate();
 		}
 		this->buffersReset();
@@ -57,8 +59,8 @@ void GraphWindow::draw()
 {
 	ImGui::Begin(_name.c_str());
 	ImGui::SetWindowSize(ImVec2{ 500, 500 });
-	ImGui::Checkbox("Display MST", &_displayingMST);
-	if (_displayingMST)
+	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
+	if (_displayingMinSpanTree)
 	{
 		this->minSpanTreeDisplay();
 	}
@@ -141,7 +143,7 @@ void GraphWindow::handlePoints()
 			this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
 			this->_edgeMap->erase(edgeToRemoveId);
 		}
-		if (_displayingMST)
+		if (_displayingMinSpanTree)
 			this->minSpanTreeUpdate();
 	}
 }
@@ -176,43 +178,36 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 	return false;
 }
 
-const std::string& GraphWindow::nameGet() const
-{
-	return _name;
-}
-
-const ImVec2& GraphWindow::mousePosGet() const
-{
-	return _windowOffset;
-}
-
-const std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >& GraphWindow::edgesGet() const
-{
-	return _edges;
-}
-
-const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() const
-{
-	return _points;
-}
-
-inline void GraphWindow::buffersReset()
-{
-	_selectedPoint.first = nullptr;
-	_selectedPoint.second = nullptr;
-	_edgeBufferFirst.first = nullptr;
-	_edgeBufferSecond.first = nullptr;
-	_edgeBufferFirst.second = nullptr;
-	_edgeBufferSecond.second = nullptr;
-}
-
 void GraphWindow::minSpanTreeDisplay()
 {
 	ImGui::Begin((_name + " MST").c_str());
 	ImGui::SetWindowSize(ImVec2{ 500, 500 });
+
 	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
+	if (_edgesMST == nullptr)
+	{
+		this->minSpanTreeUpdate();
+	}
 	if (_graph.data().size() > 1)
 	{
+		ImGui::Checkbox("Display MST algorithm durations", &_displayingMinSpanTreeTime);
+
+		if (_displayingMinSpanTreeTime)
+		{
+			ImGui::SameLine();
+			if (ImGui::Button("Calculate MST algorithm durations"))
+			{
+				this->minSpanTreeTime("Kruskal");
+			}
+			if (_algorithmDurations != nullptr)
+			{
+				for (const auto& [algorithmName, duration] : *_algorithmDurations)
+				{
+					ImGui::Text((algorithmName + ": %fs").c_str(), duration);
+				}
+			}
+		}
+
 		for (std::shared_ptr<std::pair<ImVec2, ImVec2> > edge : *_edgesMST)
 		{
 			ImVec2 vertex1 = ImVec2{ edge->first.x + windowOffsetMST.x, edge->first.y + windowOffsetMST.y };
@@ -242,15 +237,55 @@ void GraphWindow::minSpanTreeUpdate()
 				{
 					return std::find_if(vertex.begin(), vertex.end(),
 					[&](const Edge& e) -> bool
-						{
-							return e == (*_edgeMap)[n];
-						}
-			) != vertex.end();
+					{
+						return e == (*_edgeMap)[n];
+					}
+					) != vertex.end();
 				}
-			) != minSpanTree.data().end())
+				) != minSpanTree.data().end())
 			{
 				_edgesMST->push_back(std::make_shared<std::pair<ImVec2, ImVec2> >(edge));
 			}
 		}
 	}
+}
+
+void GraphWindow::minSpanTreeTime(const std::string& algorithmName)
+{
+	_algorithmDurations = std::make_shared<std::map<std::string, double> >();
+	Graph _graphTemp = _graph;
+	const auto start = std::chrono::high_resolution_clock::now();
+	_graphTemp.kruskal();
+	const auto end = std::chrono::high_resolution_clock::now();
+	(*_algorithmDurations)[algorithmName] = std::chrono::duration<double>(end - start).count();
+}
+
+const std::string& GraphWindow::nameGet() const
+{
+	return _name;
+}
+
+const ImVec2& GraphWindow::mousePosGet() const
+{
+	return _windowOffset;
+}
+
+const std::unique_ptr<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >& GraphWindow::edgesGet() const
+{
+	return _edges;
+}
+
+const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() const
+{
+	return _points;
+}
+
+inline void GraphWindow::buffersReset()
+{
+	_selectedPoint.first = nullptr;
+	_selectedPoint.second = nullptr;
+	_edgeBufferFirst.first = nullptr;
+	_edgeBufferSecond.first = nullptr;
+	_edgeBufferFirst.second = nullptr;
+	_edgeBufferSecond.second = nullptr;
 }
