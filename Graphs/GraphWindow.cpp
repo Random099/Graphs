@@ -6,7 +6,7 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_points{ std::make_unique<std::map<uint32_t, ImVec2> >() },
 	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
 	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
-	_edgesMST{ std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >{ nullptr } },
+	_edgesMST{ std::unique_ptr<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >() },
 	_algorithmDurations{ std::shared_ptr<std::map<std::string, double> >{ nullptr } },
 	_edgeBufferFirst{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_edgeBufferSecond{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
@@ -48,7 +48,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.first, *_edgeBufferSecond.first, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.second, *_edgeBufferSecond.second);
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
-			if (_displayingMinSpanTree)
+			if (_displayingMinSpanTree || _edgesMST->size() != 0)
 				this->minSpanTreeUpdate();
 		}
 		this->buffersReset();
@@ -58,7 +58,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 void GraphWindow::draw()
 {
 	ImGui::Begin(_name.c_str());
-	ImGui::SetWindowSize(ImVec2{ 500, 500 });
+	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
 	if (_displayingMinSpanTree)
 	{
@@ -181,7 +181,7 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 void GraphWindow::minSpanTreeDisplay()
 {
 	ImGui::Begin((_name + " MST").c_str());
-	ImGui::SetWindowSize(ImVec2{ 500, 500 });
+	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 
 	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
 	if (_edgesMST == nullptr)
@@ -190,12 +190,12 @@ void GraphWindow::minSpanTreeDisplay()
 	}
 	if (_graph.data().size() > 1)
 	{
-		ImGui::Checkbox("Display MST algorithm durations", &_displayingMinSpanTreeTime);
+		ImGui::Checkbox("Display duration", &_displayingMinSpanTreeTime);
 
 		if (_displayingMinSpanTreeTime)
 		{
 			ImGui::SameLine();
-			if (ImGui::Button("Calculate MST algorithm durations"))
+			if (ImGui::Button("Recalculate durations"))
 			{
 				this->minSpanTreeTime("Kruskal");
 			}
