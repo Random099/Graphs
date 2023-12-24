@@ -4,6 +4,14 @@ Interface::Interface() :
 	_activeWindow{ 0 }
 {}
 
+Interface::~Interface()
+{
+	ImGui_ImplGlfw_Shutdown();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui::DestroyContext();
+	glfwTerminate();
+}
+
 int Interface::run()
 {
 	if (!glfwInit())

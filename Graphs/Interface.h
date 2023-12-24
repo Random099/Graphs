@@ -21,6 +21,7 @@ class Interface
 {
 public:
     Interface();
+    ~Interface();
 	int run();
 private:
     static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);

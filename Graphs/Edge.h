@@ -5,9 +5,9 @@
 
 class Edge {
 public:
+    Edge();
     Edge(const uint32_t&, const uint32_t&, const int32_t&);
     Edge(const uint32_t&&, const uint32_t&&, const int32_t&&);
-    Edge();
     std::pair<uint32_t, uint32_t> verticesGet() const;
     const int& weightGet() const;
     friend std::ostream& operator<<(std::ostream& os, const Edge& e);
