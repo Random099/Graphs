@@ -62,9 +62,16 @@ void Graph::edgeAdd(const Edge& edge)
     ++_edgeCount;
 }
 
-void Graph::vertexIncrement()
+void Graph::vertexAdd(const std::vector<Edge>& vertexData)
 {
+    _graph.push_back(vertexData);
 	++_vertexCount;
+}
+
+void Graph::vertexAdd()
+{
+    _graph.push_back(std::vector<Edge>());
+    ++_vertexCount;
 }
 
 void Graph::print() const

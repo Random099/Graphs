@@ -22,14 +22,12 @@ void GraphWindow::pointAdd(const ImVec2& point)
 	if (_edgeBufferFirst.second == nullptr)
 	{
 		_edgeBufferFirst.second = std::make_shared<ImVec2>(point);
-		if (_points->size() == 0 || _selectedPoint.first == nullptr)
+		if (_selectedPoint.first == nullptr)
 		{
 			_edgeBufferFirst.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
 			(*_points)[*_edgeBufferFirst.first] = *_edgeBufferFirst.second;
-			this->_graph.data().push_back(std::vector<Edge>());
-			this->_graph.vertexIncrement();
+			this->_graph.vertexAdd();
 			this->buffersReset();
-			std::cout << _graph.vertexCountGet() << std::endl;
 		}
 	}
 	else if (_edgeBufferSecond.second == nullptr)
@@ -62,13 +60,13 @@ void GraphWindow::draw()
 {
 	ImGui::Begin(_name.c_str());
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
+	_windowOffset = ImGui::GetCursorScreenPos();
+	
 	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
 	if (_displayingMinSpanTree)
 	{
 		this->minSpanTreeDisplay();
 	}
-	_windowOffset = ImGui::GetCursorScreenPos();
-	
 	for (const auto& [n, edge] : *_edges)
 	{
 		ImVec2 vertex1 = ImVec2{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
@@ -98,7 +96,7 @@ void GraphWindow::handlePoints()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	_mousePos = io.MousePos;
-	if (io.MouseClicked[0] && _selectedPoint.first == nullptr)
+	if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 	{
 		if (!this->pointSelect(_mousePos))
 			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
@@ -108,7 +106,7 @@ void GraphWindow::handlePoints()
 			_edgeBufferFirst.first = _selectedPoint.first;
 		}
 	}
-	else if (io.MouseClicked[0] && _points->size() > 0 && _selectedPoint.second != nullptr)
+	else if (io.MouseClicked[0] && _selectedPoint.second != nullptr)
 	{
 		if (this->pointSelect(_mousePos))
 		{	
@@ -184,8 +182,8 @@ void GraphWindow::minSpanTreeDisplay()
 {
 	ImGui::Begin((_name + " MST").c_str());
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
-
 	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
+	
 	if (_edgesMST->size() == 0)
 	{
 		this->minSpanTreeUpdate();

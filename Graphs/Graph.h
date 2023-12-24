@@ -18,7 +18,8 @@ public:
     Graph(const size_t&&, const std::vector<Edge>&);
     Graph(const std::vector<std::vector<Edge> >&);
     void edgeAdd(const Edge&);
-    void vertexIncrement();
+    void vertexAdd();
+    void vertexAdd(const std::vector<Edge>&);
     void print() const;
     std::unique_ptr<std::multiset<Edge, edgeComp> > edgeSetGet() const;
     Graph kruskal() const;
