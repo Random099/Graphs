@@ -32,10 +32,10 @@ void GraphWindow::pointAdd(const ImVec2& point)
 	}
 	else if (_edgeBufferSecond.second == nullptr)
 	{
-		bool vertexConnectionExists = false;
+		bool vertexConnectionExists{ false };
 		_edgeBufferSecond.second = std::make_shared<ImVec2>(point);
 		(*_points)[*_edgeBufferSecond.first] = *_edgeBufferSecond.second;
-		auto edgesPtr = _graph.edgeSetGet();
+		auto edgesPtr{ _graph.edgeSetGet() };
 		vertexConnectionExists = std::find_if(edgesPtr->begin(), edgesPtr->end(),
 			[&](const Edge& edge) -> bool
 			{
@@ -69,17 +69,17 @@ void GraphWindow::draw()
 	}
 	for (const auto& [n, edge] : *_edges)
 	{
-		ImVec2 vertex1 = ImVec2{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
-		ImVec2 vertex2 = ImVec2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
+		ImVec2 vertex1{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
+		ImVec2 vertex2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
 		ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::WHITE, constant::LINE_THICKNESS);
 
-		int32_t weight = static_cast<int32_t>(std::sqrt(std::pow(vertex2.x - vertex1.x, 2.0f) + std::pow(vertex2.y - vertex1.y, 2.0f)));
+		int32_t weight{ helper::Distance<int32_t>(vertex1, vertex2) };
 		ImGui::GetWindowDrawList()->AddText(helper::MiddlePoint(vertex1, vertex2), ImGuiColors::GREEN, std::to_string(weight).c_str());
 	}
 	
 	for (const auto& [n, point] : *_points)
 	{
-		ImVec2 vertex = ImVec2(point.x + _windowOffset.x, point.y + _windowOffset.y);
+		ImVec2 vertex{ point.x + _windowOffset.x, point.y + _windowOffset.y };
 		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
 		ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
 	}
@@ -94,7 +94,7 @@ void GraphWindow::draw()
 
 void GraphWindow::handlePoints()
 {
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io{ ImGui::GetIO() };
 	_mousePos = io.MousePos;
 	if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 	{
@@ -150,9 +150,9 @@ bool GraphWindow::pointSelect(const ImVec2& mousePos)
 {
 	_selectedPoint.first = nullptr;
 	_selectedPoint.second = nullptr;
-	for (auto& [n, point] : *_points) 
+	for (auto& [n, point] : *_points)
 	{
-		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.y + point.y }, mousePos);
+		uint32_t distance{ helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.y + point.y }, mousePos) };
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
 			_selectedPoint.second = std::make_shared<ImVec2>(point);
@@ -167,7 +167,7 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 {
 	for (uint32_t i = 0; i < _points->size(); ++i)
 	{
-		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + (*_points)[i].x, _windowOffset.y + (*_points)[i].y}, mousePos);
+		uint32_t distance{ helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + (*_points)[i].x, _windowOffset.y + (*_points)[i].y}, mousePos };
 		if (distance < constant::POINT_SELECTOR_RADIUS)
 		{
 			_selectedPoint.second = std::make_shared<ImVec2>((*_points)[i]);
@@ -182,7 +182,7 @@ void GraphWindow::minSpanTreeDisplay()
 {
 	ImGui::Begin((_name + " MST").c_str());
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
-	ImVec2 windowOffsetMST = ImGui::GetCursorScreenPos();
+	ImVec2 windowOffsetMST{ ImGui::GetCursorScreenPos() };
 	
 	if (_edgesMST->size() == 0)
 	{
@@ -210,13 +210,13 @@ void GraphWindow::minSpanTreeDisplay()
 
 		for (std::shared_ptr<std::pair<ImVec2, ImVec2> > edge : *_edgesMST)
 		{
-			ImVec2 vertex1 = ImVec2{ edge->first.x + windowOffsetMST.x, edge->first.y + windowOffsetMST.y };
-			ImVec2 vertex2 = ImVec2{ edge->second.x + windowOffsetMST.x, edge->second.y + windowOffsetMST.y };
+			ImVec2 vertex1{ edge->first.x + windowOffsetMST.x, edge->first.y + windowOffsetMST.y };
+			ImVec2 vertex2{ edge->second.x + windowOffsetMST.x, edge->second.y + windowOffsetMST.y };
 			ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::GREEN, constant::LINE_THICKNESS);
 		}
 		for (const auto& [n, point] : *_points)
 		{
-			ImVec2 vertex = ImVec2(point.x + windowOffsetMST.x, point.y + windowOffsetMST.y);
+			ImVec2 vertex{ point.x + windowOffsetMST.x, point.y + windowOffsetMST.y };
 			ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
 			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
 		}
@@ -229,7 +229,7 @@ void GraphWindow::minSpanTreeUpdate()
 	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
 	if (_edges->size() > 0)
 	{
-		Graph minSpanTree = _graph.kruskal();
+		Graph minSpanTree{ _graph.kruskal() };
 		for (auto& [n, edge] : *_edges)
 		{
 			if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
@@ -253,10 +253,10 @@ void GraphWindow::minSpanTreeUpdate()
 void GraphWindow::minSpanTreeTime(const std::string& algorithmName)
 {
 	_algorithmDurations = std::make_shared<std::map<std::string, double> >();
-	Graph _graphTemp = _graph;
-	const auto start = std::chrono::high_resolution_clock::now();
+	Graph _graphTemp{ _graph };
+	const auto start{ std::chrono::high_resolution_clock::now() };
 	_graphTemp.kruskal();
-	const auto end = std::chrono::high_resolution_clock::now();
+	const auto end{ std::chrono::high_resolution_clock::now() };
 	(*_algorithmDurations)[algorithmName] = std::chrono::duration<double>(end - start).count();
 }
 
