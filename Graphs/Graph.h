@@ -18,6 +18,7 @@ public:
     Graph(const size_t&&, const std::vector<Edge>&);
     Graph(const std::vector<std::vector<Edge> >&);
     void edgeAdd(const Edge&);
+    void vertexIncrement();
     void print() const;
     std::unique_ptr<std::multiset<Edge, edgeComp> > edgeSetGet() const;
     Graph kruskal() const;
@@ -27,8 +28,8 @@ public:
     std::unique_ptr<std::vector<uint32_t> > verticesGet() const;
     std::vector<std::vector<Edge > >& data();
     std::vector<std::vector<Edge > > dataCopy() const;
-    int removeEdge(const Edge&);
-    int removeVertex(const uint32_t&);
+    int edgeRemove(const Edge&);
+    int vertexRemove(const uint32_t&);
     Graph operator=(const Graph&);
 private:
     size_t _vertexCount;

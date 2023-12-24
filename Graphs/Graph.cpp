@@ -62,6 +62,11 @@ void Graph::edgeAdd(const Edge& edge)
     ++_edgeCount;
 }
 
+void Graph::vertexIncrement()
+{
+	++_vertexCount;
+}
+
 void Graph::print() const
 {
     for (const auto& vertex : _graph)
@@ -145,7 +150,7 @@ std::vector<std::vector<Edge> > Graph::dataCopy() const
     return _graph;
 }
 
-int Graph::removeEdge(const Edge& edge)
+int Graph::edgeRemove(const Edge& edge)
 {
     auto& vertex = _graph[edge.verticesGet().first];
 	auto it = std::find_if(vertex.begin(), vertex.end(),
@@ -163,7 +168,7 @@ int Graph::removeEdge(const Edge& edge)
 	return -1;
 }
 
-int Graph::removeVertex(const uint32_t& vertex)
+int Graph::vertexRemove(const uint32_t& vertex)
 {
     if (vertex >= _graph.size())
     {

@@ -22,11 +22,14 @@ void GraphWindow::pointAdd(const ImVec2& point)
 	if (_edgeBufferFirst.second == nullptr)
 	{
 		_edgeBufferFirst.second = std::make_shared<ImVec2>(point);
-		if (_points->size() == 0)
+		if (_points->size() == 0 || _selectedPoint.first == nullptr)
 		{
-			_edgeBufferFirst.first = std::make_shared<uint32_t>(0);
+			_edgeBufferFirst.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
 			(*_points)[*_edgeBufferFirst.first] = *_edgeBufferFirst.second;
 			this->_graph.data().push_back(std::vector<Edge>());
+			this->_graph.vertexIncrement();
+			this->buffersReset();
+			std::cout << _graph.vertexCountGet() << std::endl;
 		}
 	}
 	else if (_edgeBufferSecond.second == nullptr)
@@ -95,14 +98,11 @@ void GraphWindow::handlePoints()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	_mousePos = io.MousePos;
-	if (io.MouseClicked[0] && _points->empty())
+	if (io.MouseClicked[0] && _selectedPoint.first == nullptr)
 	{
-		this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
-	}
-	else if (io.MouseClicked[0] && _points->size() > 0 && _selectedPoint.second == nullptr)
-	{
-		this->pointSelect(_mousePos);
-		if (_selectedPoint.second != nullptr)
+		if (!this->pointSelect(_mousePos))
+			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
+		else
 		{
 			_edgeBufferFirst.second = _selectedPoint.second;
 			_edgeBufferFirst.first = _selectedPoint.first;
@@ -129,18 +129,18 @@ void GraphWindow::handlePoints()
 		if (this->_points->size() > 0 && removeVertex)
 		{
 			this->_points->erase(--this->_points->end());
-			this->_graph.removeVertex(static_cast<uint32_t>(this->_points->size()));
+			this->_graph.vertexRemove(static_cast<uint32_t>(this->_points->size()));
 			if (this->_edges->size() > 0)
 			{
 				this->_edges->erase(edgeToRemoveId);
-				this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
+				this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
 				this->_edgeMap->erase(edgeToRemoveId);
 			}
 		}
 		else if (this->_edges->size() > 0)
 		{
 			this->_edges->erase(edgeToRemoveId);
-			this->_graph.removeEdge((*_edgeMap)[edgeToRemoveId]);
+			this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
 			this->_edgeMap->erase(edgeToRemoveId);
 		}
 		if (_displayingMinSpanTree)
@@ -150,6 +150,8 @@ void GraphWindow::handlePoints()
 
 bool GraphWindow::pointSelect(const ImVec2& mousePos)
 {
+	_selectedPoint.first = nullptr;
+	_selectedPoint.second = nullptr;
 	for (auto& [n, point] : *_points) 
 	{
 		uint32_t distance = helper::Distance<uint32_t>(ImVec2{ _windowOffset.x + point.x, _windowOffset.y + point.y }, mousePos);
@@ -188,7 +190,7 @@ void GraphWindow::minSpanTreeDisplay()
 	{
 		this->minSpanTreeUpdate();
 	}
-	if (_graph.data().size() > 1)
+	if (_edges->size() > 0)
 	{
 		ImGui::Checkbox("Display duration", &_displayingMinSpanTreeTime);
 
@@ -227,7 +229,7 @@ void GraphWindow::minSpanTreeDisplay()
 void GraphWindow::minSpanTreeUpdate()
 {
 	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
-	if (_graph.data().size() > 1)
+	if (_edges->size() > 0)
 	{
 		Graph minSpanTree = _graph.kruskal();
 		for (auto& [n, edge] : *_edges)
