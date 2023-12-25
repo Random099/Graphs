@@ -294,8 +294,8 @@ const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() con
 void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 {
 	std::mt19937 gen{ std::random_device{}() };
-	std::uniform_real_distribution<float> distX{ 20.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
-	std::uniform_real_distribution<float> distY{ 80.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 50.0f };
+	std::uniform_real_distribution<float> distX{ 5.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
+	std::uniform_real_distribution<float> distY{ 50.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 50.0f };
 
 	while (_edges->size() < edgeCount)
 	{
