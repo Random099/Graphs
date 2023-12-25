@@ -14,7 +14,8 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_windowOffset{ ImVec2{ 0, 0 } },
 	_mousePos{ ImVec2{ 0, 0 } },
 	_displayingMinSpanTree{ false },
-	_displayingMinSpanTreeTime{ false }
+	_displayingMinSpanTreeTime{ false },
+	_randomGraphEdgeCount{ 0 }
 {}
 
 void GraphWindow::pointAdd(const ImVec2& point)
@@ -61,8 +62,16 @@ void GraphWindow::draw()
 	ImGui::Begin(_name.c_str());
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
-	
+
 	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
+	ImGui::SameLine();
+	if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
+	{
+		this->randomGraphGen(_randomGraphEdgeCount);
+	}
+	ImGui::SameLine();
+	ImGui::InputInt("Edge count", &_randomGraphEdgeCount);
+
 	if (_displayingMinSpanTree)
 	{
 		this->minSpanTreeDisplay();
@@ -96,8 +105,10 @@ void GraphWindow::handlePoints()
 {
 	ImGuiIO& io{ ImGui::GetIO() };
 	_mousePos = io.MousePos;
+
 	if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 	{
+		std::cout << "WINDOW x: " << _mousePos.x - _windowOffset.x << " y: " << _mousePos.y - _windowOffset.y << std::endl;
 		if (!this->pointSelect(_mousePos))
 			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
 		else
@@ -280,6 +291,43 @@ const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() con
 	return _points;
 }
 
+void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
+{
+	std::mt19937 gen{ std::random_device{}() };
+	std::uniform_real_distribution<float> distX{ 20.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
+	std::uniform_real_distribution<float> distY{ 80.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 50.0f };
+
+	while (_edges->size() < edgeCount)
+	{
+		ImVec2 randPos{ distX(gen), distY(gen) };
+		ImVec2 randPosOffset{ randPos.x + _windowOffset.x, randPos.y + _windowOffset.y };
+
+		if (_selectedPoint.second == nullptr)
+		{
+			if (!this->pointSelect(randPosOffset))
+				this->pointAdd(ImVec2{ randPos.x, randPos.y });
+			else
+			{
+				_edgeBufferFirst.second = _selectedPoint.second;
+				_edgeBufferFirst.first = _selectedPoint.first;
+			}
+		}
+		else if (_selectedPoint.second != nullptr)
+		{
+			if (this->pointSelect(randPosOffset))
+			{
+				_edgeBufferSecond.first = _selectedPoint.first;
+				this->pointAdd(ImVec2{ *_selectedPoint.second });
+			}
+			else
+			{
+				_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
+				this->pointAdd(ImVec2{ randPos.x, randPos.y });
+			}
+		}
+	}
+}
+
 inline void GraphWindow::buffersReset()
 {
 	_selectedPoint.first = nullptr;
@@ -288,4 +336,14 @@ inline void GraphWindow::buffersReset()
 	_edgeBufferSecond.first = nullptr;
 	_edgeBufferFirst.second = nullptr;
 	_edgeBufferSecond.second = nullptr;
+}
+
+inline void GraphWindow::graphReset()
+{
+	this->buffersReset();
+	_points = std::make_unique<std::map<uint32_t, ImVec2> >();
+	_edges = std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >();
+	_edgeMap = std::make_unique<std::map<uint32_t, Edge> >();
+	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
+	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
 }

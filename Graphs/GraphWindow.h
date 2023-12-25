@@ -12,6 +12,7 @@
 #include <cmath>
 #include <map>
 #include <chrono>
+#include <random>
 
 class GraphWindow
 {
@@ -27,10 +28,13 @@ private:
 	void pointAdd(const ImVec2&);
 	bool pointSelect(const ImVec2&);
 	bool edgeSelect(const ImVec2&);
-	inline void buffersReset();
 	void minSpanTreeDisplay();
 	void minSpanTreeUpdate();
 	void minSpanTreeTime(const std::string&);
+	void randomGraphGen(const uint32_t&);
+	inline void buffersReset();
+	inline void graphReset();
+
 
 	std::string _name;
 	Graph _graph;
@@ -46,5 +50,6 @@ private:
 	ImVec2 _mousePos;
 	bool _displayingMinSpanTree;
 	bool _displayingMinSpanTreeTime;
+	int _randomGraphEdgeCount;
 };
 

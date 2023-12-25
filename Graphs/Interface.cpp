@@ -16,7 +16,7 @@ int Interface::run()
 {
 	if (!glfwInit())
 		return -1;
-	GLFWwindow* window = glfwCreateWindow(1920, 1080, "GraphDraw", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(1920, 1080, "GraphDraw", glfwGetPrimaryMonitor(), nullptr);
 	glfwSetWindowUserPointer(window, this);
 	glfwSetKeyCallback(window, Interface::keyboardButtonCallback);
 	glfwSetWindowCloseCallback(window, [](GLFWwindow* window) { glfwSetWindowShouldClose(window, GLFW_FALSE); });
@@ -48,7 +48,7 @@ int Interface::run()
 
 		if (_graphWindows.size() > 0)
 		{
-			_graphWindows[_activeWindow].handlePoints();
+			//_graphWindows[_activeWindow].handlePoints();
 		}
 
 		for (auto& graphWindow : _graphWindows)
