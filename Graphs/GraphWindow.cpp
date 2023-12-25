@@ -63,6 +63,9 @@ void GraphWindow::draw()
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
 
+	if(ImGui::IsWindowHovered())
+		this->handlePoints();
+
 	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
 	ImGui::SameLine();
 	if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
@@ -105,55 +108,57 @@ void GraphWindow::handlePoints()
 {
 	ImGuiIO& io{ ImGui::GetIO() };
 	_mousePos = io.MousePos;
-
-	if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
+	
+	if ( (_mousePos.y - _windowOffset.y) > 40.0f)
 	{
-		std::cout << "WINDOW x: " << _mousePos.x - _windowOffset.x << " y: " << _mousePos.y - _windowOffset.y << std::endl;
-		if (!this->pointSelect(_mousePos))
-			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
-		else
+		if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 		{
-			_edgeBufferFirst.second = _selectedPoint.second;
-			_edgeBufferFirst.first = _selectedPoint.first;
+			if (!this->pointSelect(_mousePos))
+				this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
+			else
+			{
+				_edgeBufferFirst.second = _selectedPoint.second;
+				_edgeBufferFirst.first = _selectedPoint.first;
+			}
 		}
-	}
-	else if (io.MouseClicked[0] && _selectedPoint.second != nullptr)
-	{
-		if (this->pointSelect(_mousePos))
-		{	
-			_edgeBufferSecond.first = _selectedPoint.first;
-			this->pointAdd(ImVec2{ *_selectedPoint.second });
-		}
-		else
+		else if (io.MouseClicked[0] && _selectedPoint.second != nullptr)
 		{
-			_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
-			this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
+			if (this->pointSelect(_mousePos))
+			{	
+				_edgeBufferSecond.first = _selectedPoint.first;
+				this->pointAdd(ImVec2{ *_selectedPoint.second });
+			}
+			else
+			{
+				_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
+				this->pointAdd(ImVec2{ _mousePos.x - _windowOffset.x, _mousePos.y - _windowOffset.y });
+			}
 		}
-	}
-	else if (io.MouseClicked[1])
-	{
-		this->buffersReset();
-		uint32_t edgeToRemoveId = (this->_edges->size() > 0) ? (--this->_edges->end())->first : 0;
-		bool removeVertex = _points->empty() ? false : _graph.data()[std::distance(this->_points->begin(), --this->_points->end())].size() == 0;
-		if (this->_points->size() > 0 && removeVertex)
+		else if (io.MouseClicked[1])
 		{
-			this->_points->erase(--this->_points->end());
-			this->_graph.vertexRemove(static_cast<uint32_t>(this->_points->size()));
-			if (this->_edges->size() > 0)
+			this->buffersReset();
+			uint32_t edgeToRemoveId = (this->_edges->size() > 0) ? (--this->_edges->end())->first : 0;
+			bool removeVertex = _points->empty() ? false : _graph.data()[std::distance(this->_points->begin(), --this->_points->end())].size() == 0;
+			if (this->_points->size() > 0 && removeVertex)
+			{
+				this->_points->erase(--this->_points->end());
+				this->_graph.vertexRemove(static_cast<uint32_t>(this->_points->size()));
+				if (this->_edges->size() > 0)
+				{
+					this->_edges->erase(edgeToRemoveId);
+					this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
+					this->_edgeMap->erase(edgeToRemoveId);
+				}
+			}
+			else if (this->_edges->size() > 0)
 			{
 				this->_edges->erase(edgeToRemoveId);
 				this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
 				this->_edgeMap->erase(edgeToRemoveId);
 			}
+			if (_displayingMinSpanTree)
+				this->minSpanTreeUpdate();
 		}
-		else if (this->_edges->size() > 0)
-		{
-			this->_edges->erase(edgeToRemoveId);
-			this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
-			this->_edgeMap->erase(edgeToRemoveId);
-		}
-		if (_displayingMinSpanTree)
-			this->minSpanTreeUpdate();
 	}
 }
 
