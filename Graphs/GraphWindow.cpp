@@ -14,6 +14,7 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_windowOffset{ ImVec2{ 0, 0 } },
 	_mousePos{ ImVec2{ 0, 0 } },
 	_displayingMinSpanTree{ false },
+	_displayingMinSpanTreeGraph{ true },
 	_displayingMinSpanTreeTime{ false },
 	_displayingGraph{ true },
 	_randomGraphEdgeCount{ 0 }
@@ -28,7 +29,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 		{
 			_edgeBufferFirst.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
 			(*_points)[*_edgeBufferFirst.first] = *_edgeBufferFirst.second;
-			this->_graph.vertexAdd();
+			_graph.vertexAdd();
 			this->buffersReset();
 		}
 	}
@@ -51,8 +52,10 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.first, *_edgeBufferSecond.first, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.second, *_edgeBufferSecond.second);
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
-			if ( (_displayingMinSpanTree || _edgesMST->size() != 0) && _displayingGraph) 
-				this->minSpanTreeUpdate();
+			if ((_displayingMinSpanTree || _edgesMST->size() != 0) && _displayingGraph)
+			{
+				minSpanTreeUpdateThreadStart();
+			}
 		}
 		this->buffersReset();
 	}
@@ -63,9 +66,10 @@ void GraphWindow::draw()
 	ImGui::Begin(_name.c_str(), NULL, ImGuiWindowFlags_MenuBar);
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
-	
+
 	if(ImGui::IsWindowHovered() && _displayingGraph)
 		this->handlePoints();
+
 	this->menuDisplay();
 	if (_displayingMinSpanTree && _displayingGraph)
 	{
@@ -132,27 +136,25 @@ void GraphWindow::handlePoints()
 		else if (io.MouseClicked[1])
 		{
 			this->buffersReset();
-			uint32_t edgeToRemoveId = (this->_edges->size() > 0) ? (--this->_edges->end())->first : 0;
-			bool removeVertex = _points->empty() ? false : _graph.data()[std::distance(this->_points->begin(), --this->_points->end())].size() == 0;
-			if (this->_points->size() > 0 && removeVertex)
+			uint32_t edgeToRemoveId = (_edges->size() > 0) ? (--_edges->end())->first : 0;
+			bool removeVertex = _points->empty() ? false : _graph.data()[std::distance(_points->begin(), --_points->end())].size() == 0;
+			if (_points->size() > 0 && removeVertex)
 			{
-				this->_points->erase(--this->_points->end());
-				this->_graph.vertexRemove(static_cast<uint32_t>(this->_points->size()));
-				if (this->_edges->size() > 0)
+				_points->erase(--_points->end());
+				_graph.vertexRemove(static_cast<uint32_t>(_points->size()));
+				if (_edges->size() > 0)
 				{
-					this->_edges->erase(edgeToRemoveId);
-					this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
-					this->_edgeMap->erase(edgeToRemoveId);
+					_edges->erase(edgeToRemoveId);
+					_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
+					_edgeMap->erase(edgeToRemoveId);
 				}
 			}
-			else if (this->_edges->size() > 0)
+			else if (_edges->size() > 0)
 			{
-				this->_edges->erase(edgeToRemoveId);
-				this->_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
-				this->_edgeMap->erase(edgeToRemoveId);
+				_edges->erase(edgeToRemoveId);
+				_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
+				_edgeMap->erase(edgeToRemoveId);
 			}
-			if (_displayingMinSpanTree)
-				this->minSpanTreeUpdate();
 		}
 	}
 }
@@ -197,11 +199,7 @@ void GraphWindow::minSpanTreeDisplay()
 	
 	this->menuDisplayMST();
 
-	if (_edgesMST->size() == 0)
-	{
-		this->minSpanTreeUpdate();
-	}
-	if (_edges->size() > 0)
+	if (_edgesMST->size() > 0 && _displayingMinSpanTreeGraph)
 	{
 		for (std::shared_ptr<std::pair<ImVec2, ImVec2> > edge : *_edgesMST)
 		{
@@ -221,9 +219,13 @@ void GraphWindow::minSpanTreeDisplay()
 
 void GraphWindow::minSpanTreeUpdate()
 {
-	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
+	std::unique_lock lock{ _mstUpdateMutex };
+	_mstUpdateCondition.wait(lock, [&]() -> bool { return _displayingMinSpanTreeGraph; });
+	_displayingMinSpanTreeGraph = false;
+
 	if (_edges->size() > 0)
 	{
+		_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
 		Graph minSpanTree{ _graph.kruskal() };
 		for (auto& [n, edge] : *_edges)
 		{
@@ -243,6 +245,16 @@ void GraphWindow::minSpanTreeUpdate()
 			}
 		}
 	}
+
+	_displayingMinSpanTreeGraph = true;
+	lock.unlock();
+	_mstUpdateCondition.notify_one();
+}
+
+void GraphWindow::minSpanTreeUpdateThreadStart()
+{
+	std::jthread mstThread{ &GraphWindow::minSpanTreeUpdate, this };
+	mstThread.detach();
 }
 
 void GraphWindow::minSpanTreeTime(const std::string& algorithmName)
@@ -277,10 +289,10 @@ const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() con
 
 void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 {
+	this->buffersReset();
 	std::mt19937 gen{ std::random_device{}() };
 	std::uniform_real_distribution<float> distX{ constant::WINDOW_X_MIN_OFFSET, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - constant::WINDOW_X_MAX_OFFSET };
 	std::uniform_real_distribution<float> distY{ constant::WINDOW_Y_MIN_OFFSET, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - constant::WINDOW_Y_MAX_OFFSET };
-
 	
 	while (_edges->size() < edgeCount)
 	{
@@ -311,6 +323,7 @@ void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 			}
 		}
 	}
+	this->minSpanTreeUpdateThreadStart();
 	_displayingGraph = true;
 }
 
@@ -334,8 +347,8 @@ void GraphWindow::menuDisplay()
 			if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
 			{
 				_displayingGraph = false;
-				std::thread thread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
-				thread.detach();
+				std::thread genThread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
+				genThread.detach();
 			}
 			ImGui::SameLine();
 			ImGui::InputInt("Edge count", &_randomGraphEdgeCount);
@@ -394,4 +407,5 @@ inline void GraphWindow::graphReset()
 	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
 	_displayingMinSpanTree = false;
 	_displayingMinSpanTreeTime = false;
+	_displayingMinSpanTreeGraph = true;
 }

@@ -14,6 +14,9 @@
 #include <chrono>
 #include <random>
 #include <thread>
+#include <mutex>
+#include <shared_mutex>
+#include <condition_variable>
 
 class GraphWindow
 {
@@ -31,6 +34,7 @@ private:
 	bool edgeSelect(const ImVec2&);
 	void minSpanTreeDisplay();
 	void minSpanTreeUpdate();
+	void minSpanTreeUpdateThreadStart();
 	void minSpanTreeTime(const std::string&);
 	void randomGraphGen(const uint32_t&);
 	void menuDisplay();
@@ -51,8 +55,11 @@ private:
 	ImVec2 _windowOffset;
 	ImVec2 _mousePos;
 	bool _displayingMinSpanTree;
+	bool _displayingMinSpanTreeGraph;
 	bool _displayingMinSpanTreeTime;
 	bool _displayingGraph;
 	int _randomGraphEdgeCount;
+	mutable std::shared_mutex _mstUpdateMutex;
+	std::condition_variable_any _mstUpdateCondition;
 };
 
