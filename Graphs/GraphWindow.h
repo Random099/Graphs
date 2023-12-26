@@ -33,10 +33,10 @@ private:
 	void minSpanTreeUpdate();
 	void minSpanTreeTime(const std::string&);
 	void randomGraphGen(const uint32_t&);
-	inline void buffersReset();
-	inline void graphReset();
 	void menuDisplay();
 	void menuDisplayMST();
+	inline void buffersReset();
+	inline void graphReset();
 
 	std::string _name;
 	Graph _graph;
@@ -54,6 +54,5 @@ private:
 	bool _displayingMinSpanTreeTime;
 	bool _displayingGraph;
 	int _randomGraphEdgeCount;
-	std::mutex _mutex;
 };
 

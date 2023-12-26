@@ -33,6 +33,11 @@ namespace constant
         constexpr uint32_t POINT_SELECTOR_RADIUS{ 15 };
         constexpr float POINT_RADIUS{ 5.0f };
         constexpr float LINE_THICKNESS{ 2.0f };
+        constexpr float WINDOW_X_MIN_OFFSET{ 5.0f };
+        constexpr float WINDOW_X_MAX_OFFSET{ 20.0f };
+        constexpr float WINDOW_Y_MIN_OFFSET{ 10.0f };
+        constexpr float WINDOW_Y_MAX_OFFSET{ 60.0f };
+        constexpr ImVec2 VERTEX_TEXT_OFFSET{ 3.5f, 20.0f };
         constexpr ImVec2 DEFAULT_GRAPH_WINDOW_SIZE{ 500, 540 };
     }
 }

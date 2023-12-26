@@ -63,9 +63,9 @@ void GraphWindow::draw()
 	ImGui::Begin(_name.c_str(), NULL, ImGuiWindowFlags_MenuBar);
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
+	
 	if(ImGui::IsWindowHovered() && _displayingGraph)
 		this->handlePoints();
-
 	this->menuDisplay();
 	if (_displayingMinSpanTree && _displayingGraph)
 	{
@@ -87,7 +87,7 @@ void GraphWindow::draw()
 		{
 			ImVec2 vertex{ point.x + _windowOffset.x, point.y + _windowOffset.y };
 			ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
-			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - constant::VERTEX_TEXT_OFFSET.x, vertex.y - constant::VERTEX_TEXT_OFFSET.y }, ImGuiColors::YELLOW, std::to_string(n).c_str());
 		}
 
 		if (_selectedPoint.first != nullptr)
@@ -104,7 +104,7 @@ void GraphWindow::handlePoints()
 	ImGuiIO& io{ ImGui::GetIO() };
 	_mousePos = io.MousePos;
 	
-	if ( (_mousePos.y - _windowOffset.y) > 10.0f)
+	if ( (_mousePos.y - _windowOffset.y) > constant::WINDOW_Y_MIN_OFFSET)
 	{
 		if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 		{
@@ -213,7 +213,7 @@ void GraphWindow::minSpanTreeDisplay()
 		{
 			ImVec2 vertex{ point.x + windowOffsetMST.x, point.y + windowOffsetMST.y };
 			ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
-			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - constant::VERTEX_TEXT_OFFSET.x, vertex.y - constant::VERTEX_TEXT_OFFSET.y }, ImGuiColors::YELLOW, std::to_string(n).c_str());
 		}
 	}
 	ImGui::End();
@@ -278,63 +278,40 @@ const std::unique_ptr<std::map<uint32_t, ImVec2> >& GraphWindow::pointsGet() con
 void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 {
 	std::mt19937 gen{ std::random_device{}() };
-	std::uniform_real_distribution<float> distX{ 5.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
-	std::uniform_real_distribution<float> distY{ 10.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 60.0f };
+	std::uniform_real_distribution<float> distX{ constant::WINDOW_X_MIN_OFFSET, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - constant::WINDOW_X_MAX_OFFSET };
+	std::uniform_real_distribution<float> distY{ constant::WINDOW_Y_MIN_OFFSET, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - constant::WINDOW_Y_MAX_OFFSET };
 
+	
+	while (_edges->size() < edgeCount)
 	{
-		std::unique_lock<std::mutex> lock{ _mutex };
+		ImVec2 randPos{ distX(gen), distY(gen) };
+		ImVec2 randPosOffset{ randPos.x + _windowOffset.x, randPos.y + _windowOffset.y };
 
-		while (_edges->size() < edgeCount)
+		if (_selectedPoint.second == nullptr)
 		{
-			ImVec2 randPos{ distX(gen), distY(gen) };
-			ImVec2 randPosOffset{ randPos.x + _windowOffset.x, randPos.y + _windowOffset.y };
-
-			if (_selectedPoint.second == nullptr)
+			if (!this->pointSelect(randPosOffset))
+				this->pointAdd(ImVec2{ randPos.x, randPos.y });
+			else
 			{
-				if (!this->pointSelect(randPosOffset))
-					this->pointAdd(ImVec2{ randPos.x, randPos.y });
-				else
-				{
-					_edgeBufferFirst.second = _selectedPoint.second;
-					_edgeBufferFirst.first = _selectedPoint.first;
-				}
+				_edgeBufferFirst.second = _selectedPoint.second;
+				_edgeBufferFirst.first = _selectedPoint.first;
 			}
-			else if (_selectedPoint.second != nullptr)
+		}
+		else if (_selectedPoint.second != nullptr)
+		{
+			if (this->pointSelect(randPosOffset))
 			{
-				if (this->pointSelect(randPosOffset))
-				{
-					_edgeBufferSecond.first = _selectedPoint.first;
-					this->pointAdd(ImVec2{ *_selectedPoint.second });
-				}
-				else
-				{
-					_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
-					this->pointAdd(ImVec2{ randPos.x, randPos.y });
-				}
+				_edgeBufferSecond.first = _selectedPoint.first;
+				this->pointAdd(ImVec2{ *_selectedPoint.second });
+			}
+			else
+			{
+				_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
+				this->pointAdd(ImVec2{ randPos.x, randPos.y });
 			}
 		}
 	}
 	_displayingGraph = true;
-}
-
-inline void GraphWindow::buffersReset()
-{
-	_selectedPoint.first = nullptr;
-	_selectedPoint.second = nullptr;
-	_edgeBufferFirst.first = nullptr;
-	_edgeBufferSecond.first = nullptr;
-	_edgeBufferFirst.second = nullptr;
-	_edgeBufferSecond.second = nullptr;
-}
-
-inline void GraphWindow::graphReset()
-{
-	this->buffersReset();
-	_points = std::make_unique<std::map<uint32_t, ImVec2> >();
-	_edges = std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >();
-	_edgeMap = std::make_unique<std::map<uint32_t, Edge> >();
-	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
-	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
 }
 
 void GraphWindow::menuDisplay()
@@ -357,7 +334,7 @@ void GraphWindow::menuDisplay()
 			if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
 			{
 				_displayingGraph = false;
-				std::jthread thread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
+				std::thread thread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
 				thread.detach();
 			}
 			ImGui::SameLine();
@@ -394,4 +371,27 @@ void GraphWindow::menuDisplayMST()
 		}
 		ImGui::EndMenuBar();
 	}
+}
+
+inline void GraphWindow::buffersReset()
+{
+	_selectedPoint.first = nullptr;
+	_selectedPoint.second = nullptr;
+	_edgeBufferFirst.first = nullptr;
+	_edgeBufferSecond.first = nullptr;
+	_edgeBufferFirst.second = nullptr;
+	_edgeBufferSecond.second = nullptr;
+}
+
+inline void GraphWindow::graphReset()
+{
+	this->buffersReset();
+	_graph = Graph();
+	_edgesMST->clear();
+	_points->clear();
+	_edges->clear();
+	_edgeMap->clear();
+	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
+	_displayingMinSpanTree = false;
+	_displayingMinSpanTreeTime = false;
 }
