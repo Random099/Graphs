@@ -358,6 +358,7 @@ void GraphWindow::menuDisplay()
 			{
 				_displayingGraph = false;
 				std::jthread thread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
+				thread.detach();
 			}
 			ImGui::SameLine();
 			ImGui::InputInt("Edge count", &_randomGraphEdgeCount);
