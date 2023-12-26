@@ -59,22 +59,13 @@ void GraphWindow::pointAdd(const ImVec2& point)
 
 void GraphWindow::draw()
 {
-	ImGui::Begin(_name.c_str());
+	ImGui::Begin(_name.c_str(), NULL, ImGuiWindowFlags_MenuBar);
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
-
 	if(ImGui::IsWindowHovered())
 		this->handlePoints();
 
-	ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
-	ImGui::SameLine();
-	if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
-	{
-		this->randomGraphGen(_randomGraphEdgeCount);
-	}
-	ImGui::SameLine();
-	ImGui::InputInt("Edge count", &_randomGraphEdgeCount);
-
+	this->menuDisplay();
 	if (_displayingMinSpanTree)
 	{
 		this->minSpanTreeDisplay();
@@ -109,7 +100,7 @@ void GraphWindow::handlePoints()
 	ImGuiIO& io{ ImGui::GetIO() };
 	_mousePos = io.MousePos;
 	
-	if ( (_mousePos.y - _windowOffset.y) > 40.0f)
+	if ( (_mousePos.y - _windowOffset.y) > 10.0f)
 	{
 		if (io.MouseClicked[0] && _selectedPoint.second == nullptr)
 		{
@@ -196,34 +187,18 @@ bool GraphWindow::edgeSelect(const ImVec2& mousePos) //TODO
 
 void GraphWindow::minSpanTreeDisplay()
 {
-	ImGui::Begin((_name + " MST").c_str());
+	ImGui::Begin((_name + " MST").c_str(), NULL, ImGuiWindowFlags_MenuBar);
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	ImVec2 windowOffsetMST{ ImGui::GetCursorScreenPos() };
 	
+	this->menuDisplayMST();
+
 	if (_edgesMST->size() == 0)
 	{
 		this->minSpanTreeUpdate();
 	}
 	if (_edges->size() > 0)
 	{
-		ImGui::Checkbox("Display duration", &_displayingMinSpanTreeTime);
-
-		if (_displayingMinSpanTreeTime)
-		{
-			ImGui::SameLine();
-			if (ImGui::Button("Recalculate durations"))
-			{
-				this->minSpanTreeTime("Kruskal");
-			}
-			if (_algorithmDurations != nullptr)
-			{
-				for (const auto& [algorithmName, duration] : *_algorithmDurations)
-				{
-					ImGui::Text((algorithmName + ": %fs").c_str(), duration);
-				}
-			}
-		}
-
 		for (std::shared_ptr<std::pair<ImVec2, ImVec2> > edge : *_edgesMST)
 		{
 			ImVec2 vertex1{ edge->first.x + windowOffsetMST.x, edge->first.y + windowOffsetMST.y };
@@ -300,7 +275,7 @@ void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 {
 	std::mt19937 gen{ std::random_device{}() };
 	std::uniform_real_distribution<float> distX{ 5.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
-	std::uniform_real_distribution<float> distY{ 50.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 50.0f };
+	std::uniform_real_distribution<float> distY{ 10.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 60.0f };
 
 	while (_edges->size() < edgeCount)
 	{
@@ -351,4 +326,61 @@ inline void GraphWindow::graphReset()
 	_edgeMap = std::make_unique<std::map<uint32_t, Edge> >();
 	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
 	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
+}
+
+void GraphWindow::menuDisplay()
+{
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("General"))
+		{
+			if(ImGui::Button("Clear"))
+				this->graphReset();
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Algorithms"))
+		{
+			ImGui::Checkbox("Display MST", &_displayingMinSpanTree);
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Graph Generator"))
+		{
+			if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
+			{
+				this->randomGraphGen(_randomGraphEdgeCount);
+			}
+			ImGui::SameLine();
+			ImGui::InputInt("Edge count", &_randomGraphEdgeCount);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+}
+
+void GraphWindow::menuDisplayMST()
+{
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("General"))
+		{
+			ImGui::Checkbox("Display duration", &_displayingMinSpanTreeTime);
+			if (_displayingMinSpanTreeTime)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Recalculate durations") && _edges->size() > 0)
+				{
+					this->minSpanTreeTime("Kruskal");
+				}
+				if (_algorithmDurations != nullptr)
+				{
+					for (const auto& [algorithmName, duration] : *_algorithmDurations)
+					{
+						ImGui::Text((algorithmName + ": %fs").c_str(), duration);
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
 }

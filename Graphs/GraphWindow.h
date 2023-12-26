@@ -34,7 +34,8 @@ private:
 	void randomGraphGen(const uint32_t&);
 	inline void buffersReset();
 	inline void graphReset();
-
+	void menuDisplay();
+	void menuDisplayMST();
 
 	std::string _name;
 	Graph _graph;
