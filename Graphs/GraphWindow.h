@@ -13,6 +13,7 @@
 #include <map>
 #include <chrono>
 #include <random>
+#include <thread>
 
 class GraphWindow
 {
@@ -51,6 +52,8 @@ private:
 	ImVec2 _mousePos;
 	bool _displayingMinSpanTree;
 	bool _displayingMinSpanTreeTime;
+	bool _displayingGraph;
 	int _randomGraphEdgeCount;
+	std::mutex _mutex;
 };
 

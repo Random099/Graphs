@@ -15,6 +15,7 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_mousePos{ ImVec2{ 0, 0 } },
 	_displayingMinSpanTree{ false },
 	_displayingMinSpanTreeTime{ false },
+	_displayingGraph{ true },
 	_randomGraphEdgeCount{ 0 }
 {}
 
@@ -50,7 +51,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			_graph.edgeAdd(Edge{ *_edgeBufferFirst.first, *_edgeBufferSecond.first, weight });
 			(*_edges)[static_cast<uint32_t>(_edges->size())] = std::make_pair(*_edgeBufferFirst.second, *_edgeBufferSecond.second);
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
-			if (_displayingMinSpanTree || _edgesMST->size() != 0) 
+			if ( (_displayingMinSpanTree || _edgesMST->size() != 0) && _displayingGraph) 
 				this->minSpanTreeUpdate();
 		}
 		this->buffersReset();
@@ -62,35 +63,38 @@ void GraphWindow::draw()
 	ImGui::Begin(_name.c_str(), NULL, ImGuiWindowFlags_MenuBar);
 	ImGui::SetWindowSize(constant::DEFAULT_GRAPH_WINDOW_SIZE);
 	_windowOffset = ImGui::GetCursorScreenPos();
-	if(ImGui::IsWindowHovered())
+	if(ImGui::IsWindowHovered() && _displayingGraph)
 		this->handlePoints();
 
 	this->menuDisplay();
-	if (_displayingMinSpanTree)
+	if (_displayingMinSpanTree && _displayingGraph)
 	{
 		this->minSpanTreeDisplay();
 	}
-	for (const auto& [n, edge] : *_edges)
+	if (_displayingGraph)
 	{
-		ImVec2 vertex1{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
-		ImVec2 vertex2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
-		ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::WHITE, constant::LINE_THICKNESS);
+		for (const auto& [n, edge] : *_edges)
+		{
+			ImVec2 vertex1{ edge.first.x + _windowOffset.x, edge.first.y + _windowOffset.y };
+			ImVec2 vertex2{ edge.second.x + _windowOffset.x, edge.second.y + _windowOffset.y };
+			ImGui::GetWindowDrawList()->AddLine(vertex1, vertex2, ImGuiColors::WHITE, constant::LINE_THICKNESS);
 
-		int32_t weight{ helper::Distance<int32_t>(vertex1, vertex2) };
-		ImGui::GetWindowDrawList()->AddText(helper::MiddlePoint(vertex1, vertex2), ImGuiColors::GREEN, std::to_string(weight).c_str());
-	}
-	
-	for (const auto& [n, point] : *_points)
-	{
-		ImVec2 vertex{ point.x + _windowOffset.x, point.y + _windowOffset.y };
-		ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
-		ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
-	}
+			int32_t weight{ helper::Distance<int32_t>(vertex1, vertex2) };
+			ImGui::GetWindowDrawList()->AddText(helper::MiddlePoint(vertex1, vertex2), ImGuiColors::GREEN, std::to_string(weight).c_str());
+		}
 
-	if (_selectedPoint.first != nullptr)
-	{
-		ImGui::GetWindowDrawList()->AddLine(ImVec2{ _selectedPoint.second->x + _windowOffset.x, _selectedPoint.second->y + _windowOffset.y }, _mousePos, ImGuiColors::WHITE_TRANSPARENT, 2.0f);
-		ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2{ _selectedPoint.second->x + _windowOffset.x, _selectedPoint.second->y + _windowOffset.y }, constant::POINT_RADIUS, ImGuiColors::RED);
+		for (const auto& [n, point] : *_points)
+		{
+			ImVec2 vertex{ point.x + _windowOffset.x, point.y + _windowOffset.y };
+			ImGui::GetWindowDrawList()->AddCircleFilled(vertex, constant::POINT_RADIUS, ImGuiColors::WHITE);
+			ImGui::GetWindowDrawList()->AddText(ImVec2{ vertex.x - 3.5f, vertex.y - 20.0f }, ImGuiColors::YELLOW, std::to_string(n).c_str());
+		}
+
+		if (_selectedPoint.first != nullptr)
+		{
+			ImGui::GetWindowDrawList()->AddLine(ImVec2{ _selectedPoint.second->x + _windowOffset.x, _selectedPoint.second->y + _windowOffset.y }, _mousePos, ImGuiColors::WHITE_TRANSPARENT, 2.0f);
+			ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2{ _selectedPoint.second->x + _windowOffset.x, _selectedPoint.second->y + _windowOffset.y }, constant::POINT_RADIUS, ImGuiColors::RED);
+		}
 	}
 	ImGui::End();
 }
@@ -277,35 +281,40 @@ void GraphWindow::randomGraphGen(const uint32_t& edgeCount)
 	std::uniform_real_distribution<float> distX{ 5.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.x - 20.0f };
 	std::uniform_real_distribution<float> distY{ 10.0f, constant::DEFAULT_GRAPH_WINDOW_SIZE.y - 60.0f };
 
-	while (_edges->size() < edgeCount)
 	{
-		ImVec2 randPos{ distX(gen), distY(gen) };
-		ImVec2 randPosOffset{ randPos.x + _windowOffset.x, randPos.y + _windowOffset.y };
+		std::unique_lock<std::mutex> lock{ _mutex };
 
-		if (_selectedPoint.second == nullptr)
+		while (_edges->size() < edgeCount)
 		{
-			if (!this->pointSelect(randPosOffset))
-				this->pointAdd(ImVec2{ randPos.x, randPos.y });
-			else
+			ImVec2 randPos{ distX(gen), distY(gen) };
+			ImVec2 randPosOffset{ randPos.x + _windowOffset.x, randPos.y + _windowOffset.y };
+
+			if (_selectedPoint.second == nullptr)
 			{
-				_edgeBufferFirst.second = _selectedPoint.second;
-				_edgeBufferFirst.first = _selectedPoint.first;
+				if (!this->pointSelect(randPosOffset))
+					this->pointAdd(ImVec2{ randPos.x, randPos.y });
+				else
+				{
+					_edgeBufferFirst.second = _selectedPoint.second;
+					_edgeBufferFirst.first = _selectedPoint.first;
+				}
 			}
-		}
-		else if (_selectedPoint.second != nullptr)
-		{
-			if (this->pointSelect(randPosOffset))
+			else if (_selectedPoint.second != nullptr)
 			{
-				_edgeBufferSecond.first = _selectedPoint.first;
-				this->pointAdd(ImVec2{ *_selectedPoint.second });
-			}
-			else
-			{
-				_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
-				this->pointAdd(ImVec2{ randPos.x, randPos.y });
+				if (this->pointSelect(randPosOffset))
+				{
+					_edgeBufferSecond.first = _selectedPoint.first;
+					this->pointAdd(ImVec2{ *_selectedPoint.second });
+				}
+				else
+				{
+					_edgeBufferSecond.first = std::make_shared<uint32_t>(static_cast<uint32_t>(_points->size()));
+					this->pointAdd(ImVec2{ randPos.x, randPos.y });
+				}
 			}
 		}
 	}
+	_displayingGraph = true;
 }
 
 inline void GraphWindow::buffersReset()
@@ -347,7 +356,8 @@ void GraphWindow::menuDisplay()
 		{
 			if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
 			{
-				this->randomGraphGen(_randomGraphEdgeCount);
+				_displayingGraph = false;
+				std::jthread thread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
 			}
 			ImGui::SameLine();
 			ImGui::InputInt("Edge count", &_randomGraphEdgeCount);

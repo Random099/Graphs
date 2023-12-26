@@ -1,8 +1,6 @@
 #include "Interface.h"
 
-Interface::Interface() :
-	_activeWindow{ 0 }
-{}
+Interface::Interface(){}
 
 Interface::~Interface()
 {
@@ -17,8 +15,6 @@ int Interface::run()
 	if (!glfwInit())
 		return -1;
 	GLFWwindow* window = glfwCreateWindow(1920, 1080, "GraphDraw", glfwGetPrimaryMonitor(), nullptr);
-	glfwSetWindowUserPointer(window, this);
-	glfwSetKeyCallback(window, Interface::keyboardButtonCallback);
 	glfwSetWindowCloseCallback(window, [](GLFWwindow* window) { glfwSetWindowShouldClose(window, GLFW_FALSE); });
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
@@ -42,18 +38,13 @@ int Interface::run()
 		ImGui::Begin("Menu");
 		if (ImGui::Button("Add Graph"))
 		{
-			_graphWindows.push_back(GraphWindow("Graph" + std::to_string(_graphWindows.size() + 1)));
+			_graphWindows.push_back(std::make_unique<GraphWindow>("Graph" + std::to_string(_graphWindows.size() + 1)));
 		}
 		ImGui::End();
 
-		if (_graphWindows.size() > 0)
-		{
-			//_graphWindows[_activeWindow].handlePoints();
-		}
-
 		for (auto& graphWindow : _graphWindows)
 		{
-			graphWindow.draw();
+			graphWindow->draw();
 		}
 
 		ImGui::Render();
@@ -61,23 +52,4 @@ int Interface::run()
 
 		glfwSwapBuffers(window);
 	}
-}
-
-void Interface::keyboardButtonCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	Interface* interface{ static_cast<Interface*>(glfwGetWindowUserPointer(window)) };
-	if (key == GLFW_KEY_D && action == GLFW_PRESS)
-	{
-		if (interface->_activeWindow < interface->_graphWindows.size() - 1)
-			interface->_activeWindow++;
-		else
-			interface->_activeWindow = 0;
-	}
-	else if (key == GLFW_KEY_A && action == GLFW_PRESS)
-	{
-		if (interface->_activeWindow > 0)
-			interface->_activeWindow--;
-		else
-			interface->_activeWindow = static_cast<int>(interface->_graphWindows.size()) - 1;
-	}	
 }

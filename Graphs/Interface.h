@@ -24,9 +24,6 @@ public:
     ~Interface();
 	int run();
 private:
-    static void keyboardButtonCallback(GLFWwindow*, int, int, int, int);
-
-    std::vector<GraphWindow> _graphWindows;
-    int _activeWindow;
+    std::vector<std::unique_ptr<GraphWindow> > _graphWindows;
 };
 
