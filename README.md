@@ -3,6 +3,7 @@ A simple app with the functionality of drawing and/or generating random graphs a
 
 GUI made using [Dear ImGui](https://github.com/ocornut/imgui)
 
+## Examples
 <p align="center">
   <img src="https://i.imgur.com/iBpfHNG.png" />
 </p>
