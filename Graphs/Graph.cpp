@@ -237,16 +237,24 @@ std::vector<std::vector<Edge> > Graph::dataCopy() const
 
 int Graph::edgeRemove(const Edge& edge)
 {
-    auto& vertex{ _graph[edge.verticesGet().first] };
-	auto it = std::find_if(vertex.begin(), vertex.end(),
+    auto& vertex1{ _graph[edge.verticesGet().first] };
+    auto& vertex2{ _graph[edge.verticesGet().second] };
+	auto vertexFirstIt = std::find_if(vertex1.begin(), vertex1.end(),
         [&](const Edge& e) -> bool
         {
 			return e.verticesGet().first == edge.verticesGet().first && e.verticesGet().second == edge.verticesGet().second;
 		}
     	);
-    if (it != vertex.end())
+    auto vertexSecondIt = std::find_if(vertex2.begin(), vertex2.end(),
+        [&](const Edge& e) -> bool
+        {
+            return e.verticesGet().first == edge.verticesGet().second && e.verticesGet().second == edge.verticesGet().first;
+        }
+        );
+    if (vertexFirstIt != vertex1.end() && vertexSecondIt != vertex2.end())
     {
-		vertex.erase(it);
+		vertex1.erase(vertexFirstIt);
+        vertex2.erase(vertexSecondIt);
 		--_edgeCount;
 		return 0;
 	}
