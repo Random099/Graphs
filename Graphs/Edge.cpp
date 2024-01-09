@@ -18,12 +18,17 @@ Edge::Edge(const uint32_t&& vertex1, const uint32_t&& vertex2, const int32_t&& w
     _weight{ weight }
 {}
 
+Edge Edge::reverse() const
+{
+	return Edge(_vertex2, _vertex1, _weight);
+}
+
 std::pair<uint32_t, uint32_t> Edge::verticesGet() const
 {
     return std::make_pair(_vertex1, _vertex2);
 }
 
-const int& Edge::weightGet() const
+int32_t Edge::weightGet() const
 {
     return _weight;
 }

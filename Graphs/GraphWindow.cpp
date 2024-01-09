@@ -7,7 +7,7 @@ GraphWindow::GraphWindow(const std::string& name) :
 	_edges{ std::make_unique<std::map<uint32_t, std::pair<ImVec2, ImVec2> > >() },
 	_edgeMap{ std::make_unique<std::map<uint32_t, Edge> >() },
 	_edgesMST{ std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >() },
-	_algorithmDurations{ std::shared_ptr<std::map<std::string, double> >{ nullptr } },
+	_algorithmDurations{ std::make_shared<std::map<std::string, double> >() },
 	_edgeBufferFirst{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_edgeBufferSecond{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
 	_selectedPoint{ std::make_pair(std::shared_ptr<uint32_t>{ nullptr }, std::shared_ptr<ImVec2>{ nullptr }) },
@@ -54,7 +54,7 @@ void GraphWindow::pointAdd(const ImVec2& point)
 			(*_edgeMap)[static_cast<uint32_t>(_edges->size() - 1)] = Edge{*_edgeBufferFirst.first, *_edgeBufferSecond.first, weight};
 			if ((_displayingMinSpanTree || _edgesMST->size() != 0) && _displayingGraph)
 			{
-				minSpanTreeUpdateThreadStart();
+				this->minSpanTreeUpdateThreadStart();
 			}
 		}
 		this->buffersReset();
@@ -155,6 +155,7 @@ void GraphWindow::handlePoints()
 				_graph.edgeRemove((*_edgeMap)[edgeToRemoveId]);
 				_edgeMap->erase(edgeToRemoveId);
 			}
+			this->minSpanTreeUpdateThreadStart();
 		}
 	}
 }
@@ -223,26 +224,23 @@ void GraphWindow::minSpanTreeUpdate()
 	_mstUpdateCondition.wait(lock, [&]() -> bool { return _displayingMinSpanTreeGraph; });
 	_displayingMinSpanTreeGraph = false;
 
-	if (_edges->size() > 0)
+	_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
+	Graph minSpanTree{ _graph.kruskal() };
+	for (auto& [n, edge] : *_edges)
 	{
-		_edgesMST = std::make_unique<std::vector<std::shared_ptr<std::pair<ImVec2, ImVec2> > > >();
-		Graph minSpanTree{ _graph.kruskal() };
-		for (auto& [n, edge] : *_edges)
-		{
-			if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
-				[&](const std::vector<Edge>& vertex) -> bool
-				{
-					return std::find_if(vertex.begin(), vertex.end(),
-					[&](const Edge& e) -> bool
-					{
-						return e == (*_edgeMap)[n];
-					}
-					) != vertex.end();
-				}
-				) != minSpanTree.data().end())
+		if (std::find_if(minSpanTree.data().begin(), minSpanTree.data().end(),
+			[&](const std::vector<Edge>& vertex) -> bool
 			{
-				_edgesMST->push_back(std::make_shared<std::pair<ImVec2, ImVec2> >(edge));
+				return std::find_if(vertex.begin(), vertex.end(),
+				[&](const Edge& e) -> bool
+				{
+					return e == (*_edgeMap)[n];
+				}
+				) != vertex.end();
 			}
+			) != minSpanTree.data().end())
+		{
+			_edgesMST->push_back(std::make_shared<std::pair<ImVec2, ImVec2> >(edge));
 		}
 	}
 
@@ -259,12 +257,21 @@ void GraphWindow::minSpanTreeUpdateThreadStart()
 
 void GraphWindow::minSpanTreeTime(const std::string& algorithmName)
 {
-	_algorithmDurations = std::make_shared<std::map<std::string, double> >();
 	Graph _graphTemp{ _graph };
-	const auto start{ std::chrono::high_resolution_clock::now() };
-	_graphTemp.kruskal();
-	const auto end{ std::chrono::high_resolution_clock::now() };
-	(*_algorithmDurations)[algorithmName] = std::chrono::duration<double>(end - start).count();
+	if (algorithmName == "Kruskal")
+	{
+		const auto start{ std::chrono::high_resolution_clock::now() };
+		_graphTemp.kruskal();
+		const auto end{ std::chrono::high_resolution_clock::now() };
+		(*_algorithmDurations)[algorithmName] = std::chrono::duration<double>(end - start).count();
+	}
+	else if (algorithmName == "Prim")
+	{
+		const auto start{ std::chrono::high_resolution_clock::now() };
+		_graphTemp.prim();
+		const auto end{ std::chrono::high_resolution_clock::now() };
+		(*_algorithmDurations)[algorithmName] = std::chrono::duration<double>(end - start).count();
+	}
 }
 
 const std::string& GraphWindow::nameGet() const
@@ -347,7 +354,7 @@ void GraphWindow::menuDisplay()
 			if (ImGui::Button("Generate random graph") && _randomGraphEdgeCount > 0)
 			{
 				_displayingGraph = false;
-				std::thread genThread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
+				std::jthread genThread{ &GraphWindow::randomGraphGen, this, _randomGraphEdgeCount };
 				genThread.detach();
 			}
 			ImGui::SameLine();
@@ -371,6 +378,7 @@ void GraphWindow::menuDisplayMST()
 				if (ImGui::Button("Recalculate durations") && _edges->size() > 0)
 				{
 					this->minSpanTreeTime("Kruskal");
+					this->minSpanTreeTime("Prim");
 				}
 				if (_algorithmDurations != nullptr)
 				{
@@ -381,6 +389,10 @@ void GraphWindow::menuDisplayMST()
 				}
 			}
 			ImGui::EndMenu();
+		}
+		if (ImGui::Button("Update"))
+		{
+			this->minSpanTreeUpdateThreadStart();
 		}
 		ImGui::EndMenuBar();
 	}
@@ -398,14 +410,20 @@ inline void GraphWindow::buffersReset()
 
 inline void GraphWindow::graphReset()
 {
-	this->buffersReset();
-	_graph = Graph();
-	_edgesMST->clear();
-	_points->clear();
-	_edges->clear();
-	_edgeMap->clear();
-	_algorithmDurations = std::shared_ptr<std::map<std::string, double> >{ nullptr };
-	_displayingMinSpanTree = false;
-	_displayingMinSpanTreeTime = false;
-	_displayingMinSpanTreeGraph = true;
+	try {
+		this->buffersReset();
+		_graph = Graph();
+		_edgesMST->clear();
+		_points->clear();
+		_edges->clear();
+		_edgeMap->clear();
+		_algorithmDurations = std::make_shared<std::map<std::string, double> >();
+		_displayingMinSpanTree = false;
+		_displayingMinSpanTreeTime = false;
+		_displayingMinSpanTreeGraph = true;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
 }

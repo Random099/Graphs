@@ -8,8 +8,9 @@ public:
     Edge();
     Edge(const uint32_t&, const uint32_t&, const int32_t&);
     Edge(const uint32_t&&, const uint32_t&&, const int32_t&&);
+    Edge reverse() const;
     std::pair<uint32_t, uint32_t> verticesGet() const;
-    const int& weightGet() const;
+    int32_t weightGet() const;
     friend std::ostream& operator<<(std::ostream& os, const Edge& e);
     bool operator==(const Edge& edge) const;
 private:
@@ -23,5 +24,13 @@ struct edgeComp
     bool operator()(const Edge& edge1, const Edge& edge2) const
     {
         return edge1.weightGet() < edge2.weightGet();
+    }
+};
+
+struct edgeCompReverse
+{
+    bool operator()(const Edge& edge1, const Edge& edge2) const
+    {
+        return edge1.weightGet() > edge2.weightGet();
     }
 };

@@ -8,6 +8,7 @@
 #include <numeric>
 #include <stack>
 #include <deque>
+#include <queue>
 
 class Graph {
 public:
@@ -21,8 +22,10 @@ public:
     void vertexAdd();
     void vertexAdd(const std::vector<Edge>&);
     void print() const;
-    std::unique_ptr<std::multiset<Edge, edgeComp> > edgeSetGet() const;
+    void edgeSetMake();
+    std::shared_ptr<std::multiset<Edge, edgeComp> > edgeSetGet() const;
     Graph kruskal() const;
+    Graph prim() const;
     int32_t costGet() const;
     size_t vertexCountGet() const;
     size_t edgeCountGet() const;
@@ -36,4 +39,5 @@ private:
     size_t _vertexCount;
     size_t _edgeCount;
     std::vector<std::vector<Edge> > _graph;
+    std::shared_ptr<std::multiset<Edge, edgeComp> > _edgeSet;
 };

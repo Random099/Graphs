@@ -17,6 +17,10 @@ int main()
     Graph graphFirstMinSpanForest = graphFirst.kruskal();
     graphFirstMinSpanForest.print();
     std::cout << "Cost: " << graphFirstMinSpanForest.costGet() << '\n';
+    std::cout << "Min Span Forest Prim:\n";
+    Graph graphFirstMinSpanForestPrim = graphFirst.prim();
+    graphFirstMinSpanForestPrim.print();
+    std::cout << "Cost: " << graphFirstMinSpanForestPrim.costGet() << '\n';
     
     
     Graph graphSecond(7);
@@ -32,13 +36,17 @@ int main()
     graphSecond.edgeAdd(Edge(4, 6, 9));
     graphSecond.edgeAdd(Edge(5, 6, 11));
     std::cout << "Graph 2:\n";
-    graphSecond.print();
-    std::cout << "Cost: " << graphSecond.costGet() << '\n';
+    // graphSecond.print();
+    //std::cout << "Cost: " << graphSecond.costGet() << '\n';
 
     std::cout << "Min Span Forest:\n";
     Graph graphSecondMinSpanForest = graphSecond.kruskal();
     graphSecondMinSpanForest.print();
     std::cout << "Cost: " << graphSecondMinSpanForest.costGet() << '\n';
+    std::cout << "Min Span Forest Prim:\n";
+    Graph graphSecondMinSpanForestPrim = graphSecond.prim();
+    graphSecondMinSpanForestPrim.print();
+    std::cout << "Cost: " << graphSecondMinSpanForestPrim.costGet() << '\n';
     interface.run();
     return 0;
 }
